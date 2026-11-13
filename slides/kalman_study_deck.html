@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Lab 2 – Kalman filter study deck</title>
+<style>
+:root{--dk:#14213D;--dkc:#1F2F52;--lt:#F6F5F1;--ltc:#FBFAF6;--bd:#E2DFD6;--tx:#DCE4EF;--mu:#9FB0C8;--ac:#E8934A;--act:#B4601C;--mul:#3A4660;--mul2:#5A6478}
+*{box-sizing:border-box;margin:0}
+body{background:#888;font-family:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif}
+#wrap{transform-origin:0 0;width:1920px}
+.s{width:1920px;height:1080px;position:relative;padding:128px 128px 160px;margin-bottom:24px;overflow:hidden}
+.dark{background:var(--dk);color:var(--tx)} .light{background:var(--lt);color:var(--dk)} .orange{background:var(--ac);color:var(--dk)}
+.eb{font-size:28px;text-transform:uppercase;letter-spacing:4px;color:var(--ac);font-weight:600;margin-bottom:20px}
+.light .eb{color:var(--act)} .orange .eb{color:var(--dk)}
+h2{font-size:62px;line-height:1.12;font-weight:600;margin-bottom:44px;max-width:1500px}
+h1{font-size:96px;line-height:1.05;font-weight:600}
+.ft{position:absolute;left:128px;right:128px;bottom:64px;font-size:24px;color:var(--mu)}
+.light .ft{color:var(--mul2)} .orange .ft{color:var(--dk)}
+.row{display:flex;gap:28px;align-items:stretch}
+.card{flex:1;border-radius:16px;padding:32px;font-size:27px;line-height:1.35}
+.dark .card{background:var(--dkc)} .light .card,.orange .card{background:var(--ltc);border:1px solid var(--bd);color:var(--dk)}
+.card h3{font-size:34px;margin-bottom:14px;font-weight:600}
+.dark .card h3{color:var(--ac)} .light .card h3,.orange .card h3{color:var(--act)}
+.arr{align-self:center;font-size:56px;color:var(--ac)}
+.mono,.eq{font-family:'IBM Plex Mono','DejaVu Sans Mono',monospace}
+.eq{font-size:40px;line-height:1.6}
+.mu{color:var(--mu)} .light .mu{color:var(--mul)}
+table{border-collapse:collapse;width:100%;font-size:24px}
+th{text-align:left;padding:14px 18px;color:var(--ac);font-weight:600}
+.light th{color:var(--act)}
+td{padding:14px 18px;vertical-align:top}
+.dark tr:nth-child(even) td{background:var(--dkc)} .light tr:nth-child(even) td{background:var(--ltc)}
+.hl{color:var(--ac);font-weight:600} .light .hl{color:var(--act)}
+.sub{font-size:30px;line-height:1.4;max-width:1500px}
+svg text{font-family:inherit}
+</style></head><body><div id="wrap">
+
+<!-- 1 cover -->
+<section class="s dark"><div class="eb">UAVs · Lab 2 · Study deck</div>
+<h1 style="margin-top:220px;max-width:1500px">Kalman filter for roll and pitch</h1>
+<p class="sub mu" style="margin-top:44px">What we model, why the gyro is an input, and how Q4.1 becomes Q4.2 – Q4.7</p>
+<div class="ft">Sources: Ch5-6 lecture slides 12–28 and Lab 2 guide §4 (full text read; slide equations read from rendered pages)</div></section>
+
+<!-- 2 problem -->
+<section class="s light"><div class="eb">Problem</div><h2>Each sensor alone gets the angle wrong</h2>
+<div class="row">
+<div class="card"><h3>Rate gyro  p, q</h3>Measures the <b>rate</b> of the angle. Very clean at high frequency.<br><br><span class="hl">Integrating it drifts:</span> any constant bias becomes a ramp in the angle.</div>
+<div class="card"><h3>Inclinometer  φ<sub>m</sub>, θ<sub>m</sub></h3>Computed from the accelerometer (Q3.4). Measures the <b>angle</b> itself, no drift.<br><br><span class="hl">Noisy, and corrupted by vibration</span> and acceleration of the vehicle.</div>
+<div class="card"><h3>Kalman filter</h3>Fuses both: trust the gyro in the short term, the inclinometer in the long term. The balance is set by <b>Q</b> and <b>R</b>.</div></div>
+<div class="ft">Source: Lab 2 guide §3–4; Ch5 slides 7–9 · full text</div></section>
+
+<!-- 3 slides vs lab -->
+<section class="s dark"><div class="eb">Why slides and MATLAB look different</div><h2>Same recipe, different model</h2>
+<table><tr><th></th><th>Slides 17–23</th><th>Slide 28</th><th>Lab 4.1 / 4.7</th><th>Lab 4.4</th></tr>
+<tr><td>Vehicle</td><td>Fixed-wing</td><td>generic</td><td>Quadrotor</td><td>Quadrotor</td></tr>
+<tr><td>State x</td><td>[φ, b<sub>p</sub>, b<sub>r</sub>]</td><td>[φ, b<sub>p</sub>]</td><td>φ or θ  (or [φ;θ])</td><td>[θ; b<sub>y</sub>]</td></tr>
+<tr><td>Input u</td><td>—</td><td>p<sub>m</sub></td><td>gyro p<sub>m</sub> / q<sub>m</sub></td><td>q<sub>m</sub></td></tr>
+<tr><td>Output y</td><td>r<sub>m</sub> (yaw gyro)</td><td>φ<sub>m</sub></td><td>φ<sub>m</sub> / θ<sub>m</sub></td><td>θ<sub>m</sub></td></tr>
+<tr><td>Bias in model</td><td>yes</td><td>yes</td><td><b>no</b></td><td>yes</td></tr></table>
+<p class="sub" style="margin-top:36px"><span class="hl">Watch out:</span> b<sub>p</sub> and b<sub>r</sub> are the biases of the <b>gyros p and r</b> (roll rate, yaw rate), not "pitch and roll". The lab 4.1 filter simply has no bias state yet.</p>
+<div class="ft">Source: Ch5-6 slides 17–23, 28; Lab 2 guide §4 · full text</div></section>
+
+<!-- 4 gyro is input -->
+<section class="s light"><div class="eb">Key idea</div><h2>The gyro is an input, not a measurement</h2>
+<svg width="1660" height="330" viewBox="0 0 1660 330">
+<defs><marker id="a" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12z" fill="#B4601C"/></marker></defs>
+<g font-size="28" fill="#14213D">
+<rect x="0" y="40" width="250" height="90" rx="16" fill="#FBFAF6" stroke="#E2DFD6"/><text x="125" y="95" text-anchor="middle">gyro  q<tspan font-size="20" dy="6">m</tspan></text>
+<rect x="400" y="40" width="330" height="90" rx="16" fill="#14213D"/><text x="565" y="95" text-anchor="middle" fill="#F6F5F1">θ̂̇ = q<tspan font-size="20" dy="6">m</tspan><tspan dy="-6"> + L·e</tspan></text>
+<rect x="880" y="40" width="200" height="90" rx="16" fill="#FBFAF6" stroke="#E2DFD6"/><text x="980" y="95" text-anchor="middle">∫  integrate</text>
+<rect x="400" y="230" width="330" height="90" rx="16" fill="#FBFAF6" stroke="#E2DFD6"/><text x="565" y="285" text-anchor="middle">e = θ<tspan font-size="20" dy="6">m</tspan><tspan dy="-6"> − θ̂</tspan></text>
+<rect x="0" y="230" width="250" height="90" rx="16" fill="#FBFAF6" stroke="#E2DFD6"/><text x="125" y="285" text-anchor="middle">incl.  θ<tspan font-size="20" dy="6">m</tspan></text>
+<text x="1220" y="95" font-size="36" fill="#B4601C" font-weight="600">θ̂</text></g>
+<g stroke="#B4601C" stroke-width="4" fill="none" marker-end="url(#a)"><path d="M250,85 H395"/><path d="M730,85 H875"/><path d="M1080,85 H1190"/><path d="M250,275 H395"/><path d="M565,230 V135"/><path d="M1130,85 V275 H735" /></g></svg>
+<div class="row" style="margin-top:20px">
+<div class="card"><h3>Gyro → input u</h3>Measures the <b>derivative</b> of the state: q<sub>m</sub> = θ̇ + noise. Its noise is the <b>process noise w</b> → Q.</div>
+<div class="card"><h3>Inclinometer → output y</h3>Measures the <b>state</b>: θ<sub>m</sub> = θ + noise. Its noise is the <b>measurement noise v</b> → R.</div></div>
+<div class="ft">Source: Ch5-6 slides 17–19, 28; Lab 2 guide Q4.1 · full text</div></section>
+
+<!-- 5 model one angle -->
+<section class="s dark"><div class="eb">Q4.1 model · one angle</div><h2>Pitch (and roll) as a state-space model</h2>
+<div class="row"><div class="card" style="flex:1.3"><div class="eq">θ̇ = q<sub>m</sub> + w<br>y = θ + v</div>
+<p style="margin-top:12px" class="mu">y is the inclinometer reading θ<sub>m</sub> (noise included in v). E[w²] = Q (gyro noise), E[v²] = R (inclinometer noise)</p></div>
+<div class="card"><h3>Matches ẋ = Ax + Bu + Gw</h3><span class="mono">A = 0<br>B = 1  (u = q<sub>m</sub>)<br>G = 1<br>C = 1</span><br><br>Observable: (A, C) = (0, 1) has rank 1.</div></div>
+<p class="sub mu" style="margin-top:36px">Roll is identical with φ, p<sub>m</sub>, φ<sub>m</sub>. Q from the gyro variance in Exp A (Q3.1); R from the inclinometer variance (Q3.4).</p>
+<div class="ft">Source: Lab 2 guide Q4.1; Ch5-6 slides 12, 17 · full text</div></section>
+
+<!-- 6 matlab stack -->
+<section class="s light"><div class="eb">Your MATLAB, line by line</div><h2>setup_4_1.m = roll and pitch filters stacked</h2>
+<div class="row"><div class="card" style="flex:1.2"><div class="mono" style="font-size:28px;line-height:1.7">A = zeros(2);<br>B = eye(2);<br>C = eye(2);<br>sys = ss(A,[B eye(2)],C,0);<br>[~,L,~] = kalman(sys,Q,R);</div></div>
+<div class="card"><h3>Reading it</h3>x = [φ; θ]<br>u = [p<sub>m</sub>; q<sub>m</sub>] (gyros)<br>y = [φ<sub>m</sub>; θ<sub>m</sub>] (inclinometers)<br>w enters through G = I<br><br>Q = diag(Q<sub>p</sub>, Q<sub>q</sub>), R = diag(R<sub>φ</sub>, R<sub>θ</sub>)</div></div>
+<p class="sub" style="margin-top:36px">A = 0 and B = C = I, so the two angles are <span class="hl">decoupled</span>: two scalar filters in one block. That answers 4.1 and the no-bias part of 4.7 together.</p>
+<div class="ft">Source: LAB2/DevKit/setup_4_1.m (values marked TODO in the file, not re-estimated here)</div></section>
+
+<!-- 7 riccati -->
+<section class="s dark"><div class="eb">Question: why a Riccati equation?</div><h2>Kalman is the dual of LQR, same equation</h2>
+<div class="row">
+<div class="card"><h3>LQR</h3>Choose <b>K</b> to minimise ∫ xᵀQx + uᵀRu.<br><br>Needs the Riccati equation for (A, B).</div>
+<div class="arr">⇄</div>
+<div class="card"><h3>Kalman filter</h3>Choose <b>L</b> to minimise the error covariance Σ = E[x̃x̃ᵀ].<br><br>Needs the <b>same</b> Riccati equation with A→Aᵀ, B→Cᵀ, Q→W, R→N.</div></div>
+<div class="card" style="margin-top:28px"><div class="eq" style="font-size:34px">L = Σ<sub>∞</sub> Cᵀ N⁻¹ <span class="mu" style="font-size:26px"> where Σ<sub>∞</sub> solves  (A−LC)Σ + Σ(A−LC)ᵀ + W + LNLᵀ = 0</span></div></div>
+<p class="sub mu" style="margin-top:28px">You never write it: kalman() solves it. It appears only because L is defined as the gain that minimises the estimation error.</p>
+<div class="ft">Source: Ch5-6 slides 12–14 (duality slide 14) · full text</div></section>
+
+<!-- 8 scalar gain -->
+<section class="s light"><div class="eb">Closed form for our case</div><h2>L = √(Q/R): one number sets the filter</h2>
+<div class="row">
+<div class="card" style="flex:1.2"><div class="eq">A = 0, C = 1<br>Σ = √(QR)<br><b>L = Σ/R = √(Q/R)</b></div></div>
+<div class="card"><h3>Pitch</h3>Q = 7.6e-4, R = 8.1e-4<br><span class="hl" style="font-size:44px">L ≈ 0.97 rad/s</span></div>
+<div class="card"><h3>Roll</h3>Q = 5.3e-5, R = 4.3e-5<br><span class="hl" style="font-size:44px">L ≈ 1.11 rad/s</span></div></div>
+<p class="sub" style="margin-top:36px">Only the ratio Q/R matters. Bigger Q or smaller R → larger L → trust the inclinometer more (this is Q4.3). Values from your setup_4_1.m, still marked TODO; computed here from the formula, not run.</p>
+<div class="ft">Source: derived from slide 13 formula; numbers from LAB2/DevKit/setup_4_1.m</div></section>
+
+<!-- 9 TF Q4.2 -->
+<section class="s dark"><div class="eb">This is Q4.2 (and 4.5)</div><h2>Freeze L, get two transfer functions</h2>
+<div class="row"><div class="card" style="flex:1.1"><div class="eq" style="font-size:36px">(s + L) θ̂ = q<sub>m</sub> + L θ<sub>m</sub><br><br>θ̂ = <span class="hl">L/(s+L)</span> θ<sub>m</sub> + <span class="hl">s/(s+L)</span> · q<sub>m</sub>/s</div>
+<p class="mu" style="margin-top:14px">G<sub>L</sub> (low-pass on the inclinometer) + G<sub>H</sub> (high-pass on the integrated gyro) = 1 → <b>complementary</b>, which is Q4.5.</p></div>
+<div class="card" style="flex:1"><svg id="bode" width="720" height="440"></svg><div class="mu" style="font-size:22px">Magnitude, L = 0.97 rad/s</div></div></div>
+<p class="sub mu" style="margin-top:28px">The block diagram on slide 4 is the <b>structure</b> of the filter from 4.1. Q4.2 asks you to derive these two transfer functions from it and comment.</p>
+<div class="ft">Source: Ch5-6 slides 27–28; Lab 2 guide Q4.2, Q4.5 · full text</div></section>
+
+<!-- 10 map -->
+<section class="s light"><div class="eb">Map</div><h2>Where each lab question lives</h2>
+<table><tr><th>Q</th><th>What it asks</th><th>What you do</th></tr>
+<tr><td>4.1</td><td>Design + implement, no bias</td><td>Model, Q, R, L = kalman(); run on A–E (roll and pitch together)</td></tr>
+<tr><td>4.2</td><td>Transfer functions</td><td>θ̂ from θ<sub>m</sub> and from q<sub>m</sub>, comment</td></tr>
+<tr><td>4.3</td><td>Effect of Q, R</td><td>Q/R ↑ → L ↑ → faster, noisier</td></tr>
+<tr><td>4.4</td><td>Add gyro bias state</td><td>x = [θ; b<sub>y</sub>], tune Q<sub>b</sub></td></tr>
+<tr><td>4.5</td><td>Complementary?</td><td>G<sub>L</sub> + G<sub>H</sub> = 1, pros and cons</td></tr>
+<tr><td>4.6</td><td>Results vs experiments A–E</td><td>Discuss</td></tr>
+<tr><td>4.7</td><td>Repeat all for roll</td><td>Same with φ, p<sub>m</sub>, φ<sub>m</sub></td></tr></table>
+<div class="ft">Source: Lab 2 guide §4 · full text</div></section>
+
+<!-- 11 bias -->
+<section class="s dark"><div class="eb">Preview of 4.4</div><h2>Adding the bias: one extra state</h2>
+<div class="row"><div class="card" style="flex:1.2"><div class="eq" style="font-size:36px">w<sub>ym</sub> = q + b<sub>y</sub>,  ḃ<sub>y</sub> = 0<br>θ̇ = q<sub>m</sub> − b<sub>y</sub> + w<br>y = θ + v</div></div>
+<div class="card"><span class="mono">x = [θ; b<sub>y</sub>]<br>A = [0 −1; 0 0]<br>B = [1; 0]<br>C = [1 0]</span><br><br>Observable: rank [C; CA] = 2.</div></div>
+<p class="sub mu" style="margin-top:36px">This is slide 28 applied to pitch. Q<sub>b</sub> (tiny) is the tuning knob: larger → the bias estimate moves faster.</p>
+<div class="ft">Source: Ch5-6 slide 28; Lab 2 guide Q4.4 · full text</div></section>
+
+<!-- 12 takeaway -->
+<section class="s orange"><div class="eb">Takeaway</div><h2>What to carry into the report</h2>
+<div class="row">
+<div class="card"><h3>Decision</h3>Model each angle as θ̇ = q<sub>m</sub> + w, y = θ + v. Gyro = input, inclinometer = output.</div>
+<div class="card"><h3>Reason</h3>Gyro has the drift, inclinometer has the noise. L = √(Q/R) sets the crossover; Riccati is just how L is defined as optimal.</div>
+<div class="card"><h3>Orin Nano</h3>Not part of this lab. A steady-state filter is a few multiply-adds per step, so cost is negligible (not measured).</div></div>
+<div class="ft">Sources: slides 12–14, 17–28 and Lab 2 guide §4</div></section>
+
+</div>
+<script>
+function fit(){var w=document.getElementById('wrap');var k=Math.min(1,innerWidth/1920);w.style.transform='scale('+k+')';document.body.style.height=(w.scrollHeight*k)+'px'}
+addEventListener('resize',fit);fit();
+(function(){var L=0.97,W=720,H=440,x0=60,y0=20,pw=640,ph=360,svg=document.getElementById('bode');
+function X(w){return x0+pw*(Math.log10(w)+2)/4} function Y(d){return y0+ph*(0-d)/60}
+var s='<rect width="'+W+'" height="'+H+'" fill="none"/>';
+for(var d=0;d>=-60;d-=20)s+='<line x1="'+x0+'" x2="'+(x0+pw)+'" y1="'+Y(d)+'" y2="'+Y(d)+'" stroke="#2c3f68"/><text x="4" y="'+(Y(d)+6)+'" fill="#9FB0C8" font-size="20">'+d+' dB</text>';
+for(var e=-2;e<=2;e++)s+='<text x="'+X(Math.pow(10,e))+'" y="'+(H-10)+'" fill="#9FB0C8" font-size="20" text-anchor="middle">'+Math.pow(10,e)+'</text>';
+function path(f,c){var p='';for(var i=0;i<=200;i++){var w=Math.pow(10,-2+4*i/200),d=Math.max(-60,20*Math.log10(f(w)));p+=(i?'L':'M')+X(w)+','+Y(d)}return '<path d="'+p+'" fill="none" stroke="'+c+'" stroke-width="4"/>'}
+s+=path(function(w){return L/Math.sqrt(w*w+L*L)},'#E8934A')+path(function(w){return w/Math.sqrt(w*w+L*L)},'#9FB0C8');
+s+='<text x="'+(x0+10)+'" y="'+(y0+40)+'" fill="#E8934A" font-size="24">G_L (inclinometer)</text><text x="'+(x0+330)+'" y="'+(y0+300)+'" fill="#9FB0C8" font-size="24">G_H (gyro)</text><text x="'+(X(0.97)-10)+'" y="'+(y0+ph+4)+'" fill="#F6F5F1" font-size="1">';
+svg.innerHTML=s})();
+</script></body></html>

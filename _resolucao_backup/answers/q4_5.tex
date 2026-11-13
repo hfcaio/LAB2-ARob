@@ -1,0 +1,43 @@
+\textbf{Complementarity.} A pair of filters $F_{\theta_m}(s)$, $F_{w}(s)$ with $\hat\theta=F_{\theta_m}\theta_m+F_{w}w_{y_m}$ is complementary when,
+after expressing the gyro as an angle measurement ($w_{y_m}=s\,\theta+\dots$, i.e.\ $\theta_m$ and $w_{y_m}/s$ measure the same quantity), $F_{\theta_m}(s)+s\,F_{w}(s)=1$:
+the estimate is then unbiased for any signal $\theta$ present in both sensors, and the sensor errors are only shaped in frequency.
+
+\emph{Without bias} (constant gain $k$): $\dot{\hat\theta}=w_{y_m}+k(\theta_m-\hat\theta)$ gives
+\begin{equation*}
+F_{\theta_m}=\frac{k}{s+k},\qquad F_{w}=\frac{1}{s+k}\quad\Rightarrow\quad F_{\theta_m}+sF_w=\frac{k+s}{s+k}=1 .
+\end{equation*}
+\emph{With bias} ($\dot{\hat\theta}=w_{y_m}-\hat b_y+k_1e$, $\dot{\hat b}_y=-k_2e$, $e=\theta_m-\hat\theta$): eliminating $\hat b_y=-\tfrac{k_2}{s}e$,
+\begin{equation*}
+F_{\theta_m}=\frac{k_1s+k_2}{s^2+k_1s+k_2},\qquad F_{w}=\frac{s}{s^2+k_1s+k_2}\quad\Rightarrow\quad F_{\theta_m}+sF_w=\frac{k_1s+k_2+s^2}{s^2+k_1s+k_2}=1 .
+\end{equation*}
+Both filters are therefore complementary (checked numerically in \texttt{kf\_pitch\_bias.m} with \texttt{minreal}: the sum reduces to the static gain 1; for the discrete filters
+actually implemented, $F_\theta+F_w\,(z-1)/T_s=1$ to $10^{-15}$ for both, with $L=0.0150$ and $L=[0.0184,\,-0.00435]$). The structure is guaranteed by the model
+$y=\theta+v$, $\dot\theta=w_{y_m}-b_y+w$: the Kalman filter only chooses \emph{where} the crossover is, namely $k=\sigma_q/\sigma_y=1.15$\,rad/s (1 state) or
+$\omega_n=\sqrt{k_2}=0.58$\,rad/s with $\zeta=1.2$ (2 states). The inclinometer is low-passed (its high-frequency noise and vibration are rejected) and the integrated gyro is
+high-passed (its low-frequency drift is rejected), cf.\ Fig.~\ref{fig:q45}. Note the second-order high-pass has a double zero at $s=0$, versus one for the first-order filter.
+
+\begin{center}
+\includegraphics[width=0.78\linewidth]{figs/q4_5_complementary.pdf}\\[-1mm]
+\captionof{figure}{Magnitude of $F_{\theta_m}$ (low-pass) and $sF_w$ (high-pass) for the two filters; the dotted line is the crossover ($k$ and $\omega_n$).}\label{fig:q45}
+\end{center}
+
+\textbf{Advantages.}
+(i) Cheap, linear, constant-gain (a scalar or 2$\times$2 gain computed offline), with a tunable bandwidth through a single ratio $Q/R$.
+(ii) It exploits the frequency separation of the errors: gyro (accurate dynamics, drift/bias) and inclinometer (unbiased in the mean, noisy).
+(iii) \emph{Bias rejection}: for a constant gyro bias $b$, $w_{y_m}=q+b$, the steady-state error of the 1-state filter is $b/k$
+($0.05$\,rad/s $\to2.5^\circ$ in our simulation, $3.2^\circ$ after the step to $0.08$), whereas for the 2-state filter it is zero, since the $s^2$ in the numerator of $sF_w$ cancels the
+$1/s$ of the integrated bias ($s\,\tfrac{b}{s}\,\tfrac{s}{s^2+k_1s+k_2}\to0$); and in Exp.~A $\hat b_y$ converged to the measured gyro bias.
+(iv) The estimate is not integrated open loop, so the drift of $\int q$ is bounded.
+
+\textbf{Limitations.}
+(i) \emph{Dependence on the inclinometer}: it measures specific force, $f=\dot v-g$, so $\theta_m$ equals $\theta$ only without acceleration. In flight (drag, rotor thrust, manoeuvres)
+the low-frequency part of $\theta_m$ is wrong (correlation with the onboard $\theta$ only $\approx0.27$ in flight), and the complementary filter \emph{passes this error unaltered below the crossover}.
+In the 2-state filter it is even absorbed by $\hat b_y$ (Exp.~D: $\hat b_y$ up to $\pm20$\,mrad/s, worse than the 1-state filter).
+(ii) \emph{Bandwidth trade-off}: a high crossover follows $\theta$ quickly but lets noise/vibration and acceleration errors through; a low crossover rejects them but makes the estimate
+slow/biased for manoeuvres (amplitude loss and lag seen in Exp.~D, $\approx4^\circ$ vs.\ $5.8^\circ$), and the bias state adds a slow mode ($\approx1/\omega_n$) before the bias is learned.
+It cannot be optimal for both, because the time-invariant gain is fixed (no adaptation to $|f|\neq g$ or to sensor-quality changes).
+(iii) The model $\dot\theta=q$ ignores the Euler-angle kinematics ($\dot\theta=q\cos\phi-r\sin\phi$) and the bias is assumed constant/slowly varying; sensor misalignment and scale errors are not modelled.
+(iv) \emph{Observability}: only roll and pitch are observable from gravity; yaw $\psi$ has no inertial reference in the accelerometers (the measurement matrix does not contain $\psi$), so the yaw gyro integral drifts
+and needs another sensor (magnetometer, vision) --- the same filter cannot fix it.
+(v) Because it is a fixed-gain filter, it gives no covariance/consistency information; the ideal (time-varying) Kalman filter or the integrated filter of Batista et al.\ (2011) with additional sensors is needed
+to do better in flight.

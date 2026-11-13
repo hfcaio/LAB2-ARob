@@ -1,0 +1,51 @@
+\textbf{Model.} With $w_{y_m}=q+b_y$ the measured pitch rate is a known input, and the bias becomes a state
+modelled as a random walk ($\dot b_y=0$ plus a small $w_b$ used only for tuning):
+\begin{equation*}
+\underbrace{\begin{bmatrix}\dot\theta\\ \dot b_y\end{bmatrix}}_{\dot x}=
+\underbrace{\begin{bmatrix}0&-1\\0&0\end{bmatrix}}_{A}x+\begin{bmatrix}1\\0\end{bmatrix}w_{y_m}+\begin{bmatrix}w\\ w_b\end{bmatrix},\qquad
+y=\underbrace{\begin{bmatrix}1&0\end{bmatrix}}_{C}x+v,
+\end{equation*}
+which is observable (the pair $(A,C)$ has $\mathrm{rank}[C;CA]=2$). Discretised at the real packet period
+$T_s=13.2$\,ms (75.6\,Hz, mean of the fresh-packet intervals, not the 200\,Hz log rate; only \texttt{nd.new} samples are used):
+$x_{k+1}=\left[\begin{smallmatrix}1&-T_s\\0&1\end{smallmatrix}\right]x_k+\left[\begin{smallmatrix}T_s\\0\end{smallmatrix}\right]w_{y_m,k}+\xi_k$,
+$\mathrm{cov}\,\xi=\mathrm{diag}\big((\sigma_qT_s)^2,\ \sigma_b^2T_s\big)$, $\mathrm{cov}\,v=\sigma_y^2$.
+The steady-state (current-estimator) gain $L=[L_\theta\ L_b]^\top$ is computed with \texttt{kalman()} (Control System Toolbox;
+cross-checked with the Riccati equation \texttt{idare}, identical to 5 digits) and applied as
+$\hat x_k^-=F\hat x_{k-1}+[T_s;0]\,w_{y_m,k-1}$, $\hat x_k=\hat x_k^-+L\,(y_k-\hat\theta_k^-)$, with the actual packet interval in~$F$.
+The no-bias filter of 4.1 was re-implemented in the script (same $\sigma_q,\sigma_y$) for comparison; it gives $L=0.0150$ ($k\simeq1.15$\,s$^{-1}$).
+
+\textbf{Tuning.} $\sigma_q=0.03$\,rad/s (std of $q$ in hover, Exp.~C; at rest it is only $0.75\times10^{-3}$) and
+$\sigma_y=1.5^\circ$ (rest: $0.41^\circ$; larger in flight due to vibration/specific force) are kept from 4.1. The only new knob is the bias
+random-walk intensity $\sigma_b$ [rad/s$/\sqrt{\text{s}}$] (ratio $Q_b/R$): it sets how fast $\hat b_y$ may move.
+\emph{Simulation} (Fig.~\ref{fig:q44sim}): an artificial bias $b_y=+0.05$\,rad/s (stepping to $+0.08$ at 30\,s) is added to a synthetic
+gyro with $\theta(t)=5^\circ[\sin(2\pi0.15t)+0.6\sin(2\pi0.4t)]$ and the same noise levels. Small $\sigma_b$ gives a smooth but slow $\hat b_y$
+($10^{-4}$: not converged after 60\,s; $3\times10^{-4}$: 10\,\% error reached after 25\,s, $\theta$ rms error $0.78^\circ$); large $\sigma_b$ converges
+in 2\,s but $\hat b_y$ becomes noisy and follows inclinometer errors. $\sigma_b=10^{-3}$ is a compromise: 9\,s to reach 10\,\% of the bias, $\theta$ error
+$0.33^\circ$ rms (raw inclinometer: $1.5^\circ$). The resulting gains are $L=[0.0184,\,-0.00435]$, i.e.\ in continuous time
+$k_1=1.41$\,s$^{-1}$, $k_2=0.33$\,s$^{-2}$ ($\omega_n=0.58$\,rad/s, $\zeta=1.2$) and a bias-free filter with the same measurements has mean $\theta$ error
+$3.2^\circ$ ($\approx b_y/k$), whereas the bias filter removes it (rms error $0.33^\circ$).
+\begin{center}
+\includegraphics[width=0.78\linewidth]{figs/q4_4_sim_bias.pdf}\\[-1mm]
+\captionof{figure}{Simulation with artificial gyro bias: true $b_y$ vs.\ $\hat b_y$ for several $\sigma_b$ (top), $\theta$ error of the no-bias and bias
+filters ($\sigma_b=10^{-3}$, middle), and bias estimation error (bottom).}\label{fig:q44sim}
+\end{center}
+
+\textbf{Real data} ($\sigma_b=10^{-3}$, $\hat b_y(0)=0$, $\hat\theta(0)=\theta_m(0)$). \emph{Exp.~A} (at rest): the measured mean of the pitch gyro is $-1.57\times10^{-3}$\,rad/s
+and $\hat b_y$ gets within 1\,mrad/s of it after 3.5\,s and then fluctuates around it (last 10\,s: mean $-0.7$\,mrad/s, std $1.3$\,mrad/s;
+Fig.~\ref{fig:q44real}a). The residual error is of the order of the bias itself because $\hat b_y$ is driven by inclinometer noise (tuned for $1.5^\circ$,
+actual $0.41^\circ$ at rest) and is irrelevant for $\hat\theta$ (error $\lesssim 1\,\text{mrad/s}/k\approx0.05^\circ$).
+\emph{Exp.~C} (hover): the gyro has essentially no bias ($+0.45$\,mrad/s mean), and $\hat b_y$ stays within $\pm1$\,mrad/s; the bias filter behaves like the
+no-bias one (rms difference to the onboard $\theta$: raw $0.73^\circ$, KF without bias $0.52^\circ$, with bias $0.55^\circ$).
+\emph{Exp.~D} (pitch pulse, 5--18.4\,s, Fig.~\ref{fig:q44real}b): both filters follow the onboard estimate with lag and reduced amplitude (the peak is $\approx4^\circ$
+vs.\ $5.8^\circ$ onboard), because during the manoeuvre the accelerometer measures specific force (rotor drag, acceleration) and not just gravity, so
+the inclinometer disagrees with the integrated gyro. The bias filter interprets this disagreement as bias: $\hat b_y$ swings to $+18$\,mrad/s and $-24$\,mrad/s
+(std $13$\,mrad/s, versus the real bias of $\approx0.6$\,mrad/s), and the rms difference to the onboard $\theta$ rises to $1.8^\circ$ (no bias: $1.29^\circ$; raw: $3.06^\circ$).
+Larger $\sigma_b$ makes this worse ($3\times10^{-3}$: $2.55^\circ$; $10^{-2}$: $3.15^\circ$), smaller is better ($3\times10^{-4}$: $1.44^\circ$, at the cost of 25\,s to converge on a large bias).
+Hence the bias state is an \emph{insurance}: with this drone/gyro (bias $\ll$ noise) it brings no accuracy gain over 4.1, but it is essential when a bias such as the
+artificial $0.05$\,rad/s appears, and its tuning must be conservative ($\omega_n\approx0.6$\,rad/s) so that the specific-force error of the inclinometer is not absorbed into $\hat b_y$.
+\begin{center}
+\includegraphics[width=0.49\linewidth]{figs/q4_4_expA_bias.pdf}\hfill\includegraphics[width=0.49\linewidth]{figs/q4_4_expC.pdf}\\[1mm]
+\includegraphics[width=0.78\linewidth]{figs/q4_4_expD.pdf}\\[-1mm]
+\captionof{figure}{Real data. (a) Exp.~A: $\hat b_y$ vs.\ mean of the pitch gyro (dashed). (b) Exp.~C: raw, onboard, KF without and with bias, and $\hat b_y$.
+(c) Exp.~D (5--18.4\,s): same signals.}\label{fig:q44real}
+\end{center}

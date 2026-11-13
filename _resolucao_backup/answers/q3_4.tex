@@ -1,0 +1,50 @@
+\textbf{Computation.} At rest (or at constant velocity) the accelerometer measures the specific force
+$f=-g\,R^\top e_3$ in the body frame, which with the Euler convention used by the navdata gives
+$f=g\,[\sin\theta,\ -\sin\phi\cos\theta,\ -\cos\phi\cos\theta]^\top$. Hence the raw pitch and roll measurements are
+\begin{equation}
+\theta_m=\operatorname{atan2}\!\big(a_x,\ \sqrt{a_y^2+a_z^2}\big),\qquad
+\phi_m=\operatorname{atan2}\!\big(-a_y,\ -a_z\big),
+\end{equation}
+computed sample by sample on the fresh packets (\texttt{sec3\_sensores.m}). \emph{Sign check:} in Experiment~A the accelerometer sees only gravity, and
+the raw angles have the same sign as the onboard estimate $\theta,\phi$ (navdata): over the whole log the correlation is $+0.61$ (pitch) and $+0.64$ (roll), e.g.\ when the table is bumped
+at $t\approx27$~s, $a_x$ drops by $0.16$~m/s$^2$ and $a_y$ by $0.13$~m/s$^2$ and the onboard $\theta$/$\phi$ move by $-0.6^\circ$/$+0.5^\circ$ against $-0.9^\circ$/$+0.75^\circ$ from the accelerometer. So no sign flip is needed
+(SGN\_TH$=$SGN\_PHI$=+1$). In D, the positive pitch pulse (onboard $\theta\approx+5^\circ$) is also accompanied by an increase of $\theta_m$.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.49\linewidth]{figs/q3_4_raw_expA.pdf}\hfill
+\includegraphics[width=0.49\linewidth]{figs/q3_4_raw_expC.pdf}
+\caption{Raw inclinometer (light blue) versus the onboard estimate (red). Left: Exp.~A (rest, motors off). Right: Exp.~C (hover, take-off at $t\approx4$~s).}
+\label{fig:raw_AC}
+\end{figure}
+
+\begin{table}[H]\centering\small
+\caption{Raw inclinometer versus onboard estimate (degrees), analysis windows of Sections 3.1--3.3 ($D$: $6$--$18$~s).}\label{tab:raw}
+\begin{tabular}{l rrrr rrrr}\toprule
+ & \multicolumn{4}{c}{pitch} & \multicolumn{4}{c}{roll}\\\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+Exp. & mean$_m$ & std$_m$ & mean$_{ob}$ & std$_{ob}$ & mean$_m$ & std$_m$ & mean$_{ob}$ & std$_{ob}$\\\midrule
+A & 0.68 & 0.19 & $-0.26$ & 0.10 & 2.14 & 0.05 & 0.12 & 0.06\\
+B & 2.71 & 0.97 & 0.34 & 0.25 & $-3.47$ & 4.47 & 0.05 & 0.55\\
+C & 0.46 & 0.44 & 0.04 & 0.34 & 2.42 & 0.37 & 0.03 & 0.36\\
+D & 1.33 & 1.96 & 1.71 & 2.14 & 1.66 & 0.55 & 0.06 & 0.88\\\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Comments.}
+\emph{(i) Bias.} Even at rest the raw roll reads $2.1^\circ$ and the raw pitch $0.7^\circ$ (Table~\ref{tab:raw}), versus $\approx0^\circ$ onboard: the offset
+$a_y\approx-0.37$~m/s$^2$ (Section 3.1) is a constant mounting/accelerometer bias (the onboard filter removes it by calibration), and it persists in hover ($2.4^\circ$ in C).
+It must be removed or accounted for in the filters. \emph{(ii) Noise.} At rest the raw angle is accurate to $\sigma\le0.2^\circ$ but with the rotors on it is a lot noisier:
+$\sigma_{\phi_m}=4.5^\circ$ in B and $0.37^\circ$/$0.44^\circ$ in C, due to the vibration and body acceleration already identified in 3.2--3.3 (the accelerometer noise
+$0.07$--$0.8$~m/s$^2$ maps into $\approx0.4$--$4.5^\circ$, $\delta\theta\approx\delta a/g$), see Fig.~\ref{fig:raw_AC} (right). \emph{(iii) It does not measure only gravity in flight.} In motion the accelerometer
+measures $f=\dot v^b+\omega\times v^b-g\,R^\top e_3$ plus rotor drag, and the pitch/roll dynamics of a quadrotor are produced precisely by horizontal accelerations. Therefore the raw
+angle in D (Fig.~\ref{fig:raw_D}) neither follows the onboard estimate in amplitude nor in phase: the correlation with the onboard angle is only $0.24$ (pitch), $-0.12$ (roll) in D and
+$\approx0.2$ in B and C, with RMS differences of $0.7$--$2.6^\circ$ (pitch) and $1.9$--$5.6^\circ$ (roll). The pitch pulse of $\approx5^\circ$ appears distorted and delayed in the raw
+signal, since the translational acceleration/drag it creates is added to the gravity component and then decays. \emph{(iv) Hence} the accelerometer inclinometer is reliable only at \emph{low
+frequency}, where the average of $\dot v$ is close to zero and the noise is averaged out (rest, or slow trends: in C the mean pitch agrees with the onboard within $0.4^\circ$); at medium/high frequency the gyro
+(integrated, which is accurate for short times but drifts due to its bias, see 3.1) is the reliable source. This is the motivation for the complementary/Kalman filters of Section~4, which fuse the two:
+$\theta_m$ as a low-passed measurement and the integral of the gyro as a high-passed one.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.62\linewidth]{figs/q3_4_raw_expD.pdf}
+\caption{Experiment~D (pitch pulse of $0.2$ between $10$ and $13$~s): raw inclinometer vs.\ onboard attitude, $t\in[5,18.4]$~s. Only the portion before touch-down is used.}
+\label{fig:raw_D}
+\end{figure}

@@ -1,0 +1,36 @@
+\textbf{Procedure.} Using only fresh packets in the quiet part of Experiment~A (drone at rest on a table, rotors off,
+$t\in[10,24]$~s, $N=1071$ samples; before and after, the log shows table bumps/handling that double
+$\mathrm{std}(a_x)$), the measurement vector $z=[a_x\ a_y\ a_z\ p\ q\ r]^\top$ was characterised by
+$\bar z=\frac1N\sum z_k$ and $\Sigma=\frac1{N-1}\sum (z_k-\bar z)(z_k-\bar z)^\top$ (\texttt{mean}/\texttt{cov} in \texttt{sec3\_sensores.m}).
+
+\begin{table}[H]\centering\scriptsize\setlength{\tabcolsep}{4pt}
+\caption{Experiment A: mean and covariance of $z$ (acc.\ in m/s$^2$, gyro in rad/s; covariance units are the products).}\label{tab:statsA}
+\begin{tabular}{l r rrr rrr}\toprule
+ & mean & \multicolumn{6}{c}{covariance $\Sigma$}\\\cmidrule(lr){3-8}
+ & & $a_x$ & $a_y$ & $a_z$ & $p$ & $q$ & $r$\\\midrule
+$a_x$ & $\phantom{-}0.118$ & $1.13$e-3 & $-5.7$e-5 & $-2.8$e-5 & $-2.7$e-7 & $2.2$e-8 & $-1.6$e-6\\
+$a_y$ & $-0.370$ & & $9.2$e-5 & $6.1$e-5 & $2.1$e-7 & $-2.4$e-7 & $7.6$e-8\\
+$a_z$ & $-9.916$ & & & $1.04$e-3 & $-5.1$e-7 & $2.7$e-7 & $1.3$e-6\\
+$p$ & $\phantom{-}8.5$e-4 & & & & $5.3$e-7 & $1.2$e-8 & $-2.2$e-8\\
+$q$ & $-1.47$e-3 & & & & & $5.3$e-7 & $2.8$e-8\\
+$r$ & $\phantom{-}5$e-5 & & & & & & $5.0$e-7\\\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Standard deviations:} $\sigma_{a}=[0.034,\ 0.0096,\ 0.032]$~m/s$^2$ and
+$\sigma_{p,q,r}=[7.3,\,7.3,\,7.1]\times10^{-4}$~rad/s ($\approx0.04^\circ$/s). All cross-correlations are small
+($|\rho|\le0.2$, the largest being $\rho_{a_y a_z}=0.20$, $\rho_{a_xa_y}=-0.18$), so $\Sigma$ is practically diagonal.
+
+\textbf{Discussion.}
+\emph{Gyro:} the means are not zero: $\bar p=0.85$, $\bar q=-1.47$, $\bar r\approx0$ mrad/s ($0.05$, $-0.08$, $0^\circ$/s).
+Since the drone is at rest and Earth-rotation ($7\times10^{-5}$~rad/s) is negligible, these are \emph{sensor biases}
+(MEMS offsets, temperature dependent, only partly removed by the factory calibration); integrating $\bar q$ alone would drift
+$\approx0.08^\circ$ every second, which is why a pure gyro integration is not enough (Section~4). The remaining scatter
+($\sim7\times10^{-4}$~rad/s) is white-like electronic/thermal noise plus quantization of the converter, with the same level in the three axes.
+\emph{Accelerometers:} at rest the sensor reads the specific force $-g\,R^\top e_3$; a perfectly levelled drone would give
+$\bar a=[0,0,-9.81]$. We observe $\bar a=[0.118,-0.370,-9.916]$, i.e. $\|\bar a\|=9.92$~m/s$^2$ (+1.2\,\% scale error) and
+offsets $a_y\approx-0.37$, $a_x\approx0.12$~m/s$^2$ that correspond to $2.1^\circ$ in roll and $0.7^\circ$ in pitch. This combines
+a small mounting/levelling error of the table and the board with the accelerometer bias; it is a constant offset that the raw inclinometer
+(3.4) inherits. The noise ($\sigma\approx0.03$~m/s$^2\approx0.2^\circ$ for $a_x,a_z$, only $0.01$~m/s$^2$ for $a_y$) is likewise
+thermal/quantization noise; the raw pitch (Fig.~1) visibly toggles between discrete levels about $0.5^\circ$ ($\approx0.05$--$0.09$~m/s$^2$) apart, which is how the converter resolution
+(and the sensor's internal processing) shows up. The motors being off, there is no vibration and no motion: this is the noise floor of the sensors.

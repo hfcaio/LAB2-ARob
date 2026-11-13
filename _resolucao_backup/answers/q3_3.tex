@@ -1,0 +1,32 @@
+\textbf{Procedure.} Experiment~C (hover): window $t\in[9,30]$~s ($N=1610$), after the take-off transient
+($\mathrm{std}(a_z)\approx1.7$~m/s$^2$ in $[3,6]$~s) and before the landing ($t>30$~s, where $\mathrm{std}(a_z)\approx2.5$~m/s$^2$ and $\mathrm{std}(p,q)\approx0.2$~rad/s).
+
+\begin{table}[H]\centering\scriptsize\setlength{\tabcolsep}{4pt}
+\caption{Experiment C: mean and covariance of $z$ (units as in Table~\ref{tab:statsA}).}
+\begin{tabular}{l r rrr rrr}\toprule
+ & mean & \multicolumn{6}{c}{covariance $\Sigma$}\\\cmidrule(lr){3-8}
+ & & $a_x$ & $a_y$ & $a_z$ & $p$ & $q$ & $r$\\\midrule
+$a_x$ & $\phantom{-}0.079$ & $5.7$e-3 & $2.8$e-3 & $1.9$e-3 & $-1.6$e-5 & $-7.7$e-5 & $8.8$e-5\\
+$a_y$ & $-0.418$ & & $4.2$e-3 & $1.9$e-3 & $-7.9$e-5 & $-1.7$e-4 & $1.5$e-4\\
+$a_z$ & $-9.891$ & & & $5.4$e-3 & $3.6$e-5 & $-8.7$e-6 & $8.3$e-5\\
+$p$ & $-9.8$e-4 & & & & $6.3$e-4 & $-9.7$e-5 & $-1.2$e-4\\
+$q$ & $\phantom{-}5.3$e-4 & & & & & $7.6$e-4 & $6.3$e-5\\
+$r$ & $-6.8$e-4 & & & & & & $7.7$e-4\\\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Standard deviations:} $\sigma_a=[0.075,\,0.065,\,0.074]$~m/s$^2$, $\sigma_{p,q,r}=[0.025,\,0.028,\,0.028]$~rad/s ($\approx1.5^\circ$/s).
+Compared with A, the noise is $2$--$7\times$ larger on the accelerometers and $34$--$39\times$ on the gyros ($7\times10^{-4}\to0.025$--$0.028$);
+compared with B it is $\approx2$--$4\times$ smaller on the gyros and much smaller on $a_y$ ($0.78\to0.065$), because nobody holds the drone any more. The means are
+again those of A within the noise ($\bar a_y=-0.42$, i.e. the same mounting offset of $\approx2.4^\circ$ in roll, $\|\bar a\|=9.90$), as expected: in hover the average specific force is $-g$ plus
+a small residual.
+
+\textbf{New sources of disturbance.} (i) \emph{Rotor vibration} again, now at the higher thrust of hover (all four motors at $\approx$ the weight-balancing speed), but
+without hand/ground damping; it dominates the accelerometer variance and is responsible for the positive correlations among $a_x,a_y,a_z$
+($\rho\approx0.35$--$0.57$) --- a common-mode component, as expected from a vibration seen by a three-axis sensor rotated with respect to the
+vibration direction. (ii) \emph{Real motion of the body}: the controller continuously corrects the attitude and position ($\theta,\phi$ oscillate by $\sim\pm0.4^\circ$, $\sigma_{p,q}\approx0.025$~rad/s),
+and every attitude change is accompanied by thrust-vector changes and body accelerations, so $a_{x,y}$ include the term $\dot v$ and not only gravity. (iii) \emph{Aerodynamic disturbances}:
+air currents, ground effect, the rotor wake recirculating on the frame and rotor drag force (proportional to the body velocity), which also appears in the accelerometer. (iv) \emph{Actuation noise of the control loop}:
+the rate gyros see the high-bandwidth corrections ordered to the motors. Unlike in A the gyro bias ($\sim10^{-3}$~rad/s) is now $\sim30$ times smaller than the noise, but its effect on the integrated angle
+still accumulates with time, so it must still be estimated (Section~4.4). Since $\Sigma$ in C corresponds to the real flight condition, it is the one that should be used as starting point
+to tune $R$ and $Q$ of the Kalman filter.

@@ -1,0 +1,21 @@
+For constant gain $M$, the discrete filter is $\hat\theta[k]=(1-M)\big(\hat\theta[k{-}1]+T_sq_m[k{-}1]\big)+M\,\theta_m[k]$. With $a=1-M$:
+\begin{equation}
+\frac{\hat\theta}{\theta_m}(z)=\frac{M z}{z-a},\qquad \frac{\hat\theta}{q_m}(z)=\frac{a\,T_s}{z-a}.
+\end{equation}
+In continuous time (equivalently, $T_s\to0$ with $M\approx kT_s$, $k=-\ln(1-M)/T_s$), the estimator is $\dot{\hat\theta}=q_m+k(\theta_m-\hat\theta)$, so
+\begin{equation}
+\boxed{\frac{\hat\theta(s)}{\theta_m(s)}=\frac{k}{s+k},\qquad \frac{\hat\theta(s)}{q_m(s)}=\frac{1}{s+k}}
+\qquad k=0.965\ \text{rad/s}\ (M=0.0125).
+\end{equation}
+\textbf{Comments.}
+(i) $\theta_m\to\hat\theta$ is a first-order \emph{low-pass} with unit DC gain and cut-off $k$ (time constant $1/k\approx1.04$\,s): the inclinometer is trusted at low frequency, where gravity dominates the specific force and
+gyro integration would drift; high-frequency inclinometer noise and vibration are attenuated at $-20$\,dB/dec.
+(ii) $q_m\to\hat\theta$ is $\frac1{s+k}=\frac{s}{s+k}\cdot\frac1s$: the integrated gyro passes through a \emph{high-pass} $s/(s+k)$ with the same cut-off, so
+slow drift (including any constant gyro bias, which becomes a finite error $b/k$ here) is rejected, while fast rotations are tracked as with the pure integrator ($1/s$ for $\omega\gg k$; Fig.~\ref{fig:q42}, right).
+(iii) The two filters satisfy $\frac{k}{s+k}+\frac{s}{s+k}=1$, so they are \emph{complementary}: the estimate is exact for any signal that reaches both sensors without error,
+and the filter only chooses, as a function of frequency, which sensor to believe. The Kalman design thus reduces to a complementary filter whose crossover $k=\sqrt{Q/R}$ is set by the noise statistics (here
+$f_c=0.154$\,Hz); the discrete transfer functions (dotted) coincide with the continuous ones up to well beyond $k$ ($T_s\ll1/k$).
+\begin{figure}[H]\centering
+\includegraphics[width=.75\linewidth]{figs/q4_2_bode.pdf}
+\caption{Magnitudes of the filter paths ($k=0.965$\,rad/s, dashed line): complementary low-pass/high-pass (left) and $q_m\to\hat\theta$ vs.\ $1/s$ (right).}\label{fig:q42}
+\end{figure}

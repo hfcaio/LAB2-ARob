@@ -1,0 +1,53 @@
+\textbf{Model.} With the gyro measurement $q_m$ (pitch rate, column 2 of the gyro) used as a known input,
+\begin{equation}
+\dot\theta = q_m + w,\qquad y = \theta_m + v,\qquad w\sim(0,Q),\; v\sim(0,R),
+\end{equation}
+where $\theta_m=\operatorname{atan2}\!\big(a_x,\sqrt{a_y^2+a_z^2}\big)$ is the raw inclinometer. Discretised at $T_s$ (mean spacing of the
+fresh navdata packets, $T_s=13.1$\,ms $\approx 1/76.5$\,s):
+$\theta[k{+}1]=\theta[k]+T_s q_m[k]+T_s w[k]$, $y[k]=\theta[k]+v[k]$, i.e.\ $A=1$, $B=T_s$, $G=T_s$, $C=1$.
+The steady-state gain comes from \texttt{kalman(ss(1,[Ts Ts],1,[0 0],Ts),Q,R)}
+(Control Toolbox, available in R2025b), which returns the innovation gain $M$ of the current estimator:
+$\hat\theta[k]=\bar\theta[k]+M\,(y[k]-\bar\theta[k])$, $\bar\theta[k]=\hat\theta[k{-}1]+T_s q_m[k{-}1]$.
+
+\textbf{Choice of $Q$ and $R$} (from the covariances of Sec.~3, \texttt{kf\_pitch\_a.m}).
+\emph{Gyro:} $\sigma_q = 0.0007$\,rad/s with motors off (Exp.~A) but $0.0275$\,rad/s in hover (Exp.~C): vibration dominates,
+so the in-flight value is used, $Q=\sigma_q^2=7.6\times10^{-4}\,\text{rad}^2/\text{s}^2$.
+\emph{Inclinometer:} at rest $\sigma_{\theta_m}=0.34^\circ$ (Exp.~A), but in flight the accelerometer measures specific force
+(rotor drag, accelerations), so the error is far larger than the sensor noise and correlates poorly with the attitude. The effective
+measurement error was therefore taken as the standard deviation of $\theta_m-\theta_{\rm onboard}$ over the flight segments of Exp.~C and D
+($1.64^\circ$ with the mean offset removed), $R=(0.0285\,\text{rad})^2=8.1\times10^{-4}\,\text{rad}^2$. This gives $Q/R=0.93\,\mathrm{s^{-2}}$ and
+\begin{equation}
+M=0.0125,\qquad \text{closed-loop pole } 1-M=0.9875,\qquad k\simeq\sqrt{Q/R}=0.965\ \text{rad/s}\ (f_c=0.154\ \text{Hz}),
+\end{equation}
+with a posterior standard deviation of $0.18^\circ$ predicted by the Riccati solution. Using the rest value of $R$ would give $k\approx 4.6$\,rad/s and would
+pass most of the accelerometer's flight error into $\hat\theta$.
+
+\textbf{Evaluation on real data.} The filter was run offline on the fresh packets, propagating with the real $\Delta t$ between packets
+(Fig.~\ref{fig:q41exp}). Since the onboard estimate $\theta_{\rm onboard}$ is itself an estimate (and differs from the raw inclinometer by a
+$0.5$--$0.9^\circ$ offset), the table gives the RMS deviation from it after removing the mean.
+\begin{center}\small
+\begin{tabular}{lccc}\toprule
+ & raw $\theta_m$ & KF & std of KF output / onboard\\\midrule
+Exp.~C (hover, 8--28 s) & $0.51^\circ$ & $0.18^\circ$ & $0.37^\circ$ / $0.34^\circ$\\
+Exp.~D (pulse, 5--18.4 s) & $2.52^\circ$ & $0.71^\circ$ & $1.62^\circ$ / $2.14^\circ$\\\bottomrule
+\end{tabular}
+\end{center}
+The KF removes most of the high-frequency content of $\theta_m$ (in hover it follows the onboard estimate to $0.18^\circ$) and, in Exp.~D, it recovers the
+$\approx\!4^\circ$ pitch pulse between 10 and 13 s even though the raw inclinometer is distorted there (it rises late and decays slowly, because
+it is driven by the acceleration produced by the manoeuvre). The KF peak ($\approx 3.8^\circ$) is a little below the onboard one ($\approx 4.5^\circ$) and the filter
+undershoots after the pulse: with $k\approx1$\,rad/s the correction from the (wrong) inclinometer is slow but not negligible, so the result
+lies between the gyro integral and $\theta_m$.
+
+\begin{figure}[H]\centering
+\includegraphics[width=.72\linewidth]{figs/q4_1_exp.pdf}
+\caption{Pitch from the raw inclinometer, the onboard estimator and the steady-state KF (Exp.~C and D).}\label{fig:q41exp}
+\end{figure}
+
+\textbf{Simulation.} With a synthetic truth (two smooth $8^\circ$ pulses plus a $0.3$\,Hz, $2^\circ$ oscillation), gyro noise $\sqrt Q$ and inclinometer noise $\sqrt R$
+(Fig.~\ref{fig:q41sim}), the RMS errors are: raw inclinometer $1.64^\circ$, open-loop gyro integration $0.61^\circ$ (random walk, grows with time), KF $0.23^\circ$ (theory: $0.18^\circ$ in steady state; the extra error is mainly the lag
+of the filter on the manoeuvres, which the stationary noise-only Riccati solution does not include).
+
+\begin{figure}[H]\centering
+\includegraphics[width=.72\linewidth]{figs/q4_1_sim.pdf}
+\caption{Synthetic test: truth, raw measurement, KF and pure gyro integration (top); estimation errors (bottom).}\label{fig:q41sim}
+\end{figure}

@@ -1,0 +1,39 @@
+For the scalar model the steady-state Riccati equation gives, in continuous time, $P=\sqrt{QR}$ and $K=P/R=\sqrt{Q/R}$, so the filter depends only on the ratio:
+\begin{equation}
+k=\sqrt{Q/R}\;[\mathrm{rad/s}],\qquad f_c=\tfrac{1}{2\pi}\sqrt{Q/R},\qquad \text{posterior variance}\;P=\sqrt{QR}.
+\end{equation}
+Scaling $Q$ and $R$ by the same factor leaves the gain (and the estimate) unchanged; only the ratio matters. Increasing $Q/R$ means that the gyro integration is considered less reliable (large process noise) or the inclinometer more reliable, hence a larger gain, a higher cut-off
+$k$ and a faster response, but more of the inclinometer's noise and of the specific-force error pass to $\hat\theta$. Decreasing $Q/R$ trusts the gyro: heavy smoothing of $\theta_m$ and a very slow correction time ($1/k$), so
+gyro drift/bias and initial-condition errors are removed only slowly. Table~\ref{tab:q43} and Fig.~\ref{fig:q43gain} quantify this for the discrete filter with $T_s=13.1$\,ms (computed with \texttt{kalman}).
+\begin{table}[H]\centering\small
+\begin{tabular}{rcccc}\toprule
+$Q/R$ [s$^{-2}$] & $M$ & $k$ [rad/s] & $f_c$ [Hz] & post.\ std/$\sqrt R$\\\midrule
+0.01 & 0.0013 & 0.10 & 0.016 & 0.04\\
+0.1 & 0.0041 & 0.32 & 0.050 & 0.06\\
+0.93 (nominal) & 0.0125 & 0.97 & 0.154 & 0.11\\
+10 & 0.040 & 3.16 & 0.50 & 0.20\\
+100 & 0.122 & 9.99 & 1.59 & 0.35\\
+1000 & 0.336 & 31.4 & 5.0 & 0.58\\\bottomrule
+\end{tabular}
+\caption{Effect of $Q/R$ on gain, bandwidth and expected error ($k\simeq\sqrt{Q/R}$ while $kT_s\ll1$).}\label{tab:q43}
+\end{table}
+\begin{figure}[H]\centering
+\includegraphics[width=.75\linewidth]{figs/q4_3_gain.pdf}
+\caption{Gain $k$ (left) and discrete gain $M$ (right) versus $Q/R$ for $R=8.1\times10^{-4}$\,rad$^2$.}\label{fig:q43gain}
+\end{figure}
+\textbf{Response comparison.} Fig.~\ref{fig:q43resp} runs three tunings ($Q/R\times0.01$, nominal, $\times100$; $k=0.10$, $0.97$, $9.6$\,rad/s) on Exp.~D and on the synthetic test.
+\begin{center}\small
+\begin{tabular}{lccc}\toprule
+ & $k=0.10$ & $k=0.97$ & $k=9.6$\\\midrule
+Exp.~D: RMS dev.\ from onboard & $1.76^\circ$ & $0.71^\circ$ & $2.33^\circ$\\
+Synthetic: RMS error & $0.46^\circ$ & $0.23^\circ$ & $0.43^\circ$\\\bottomrule
+\end{tabular}
+\end{center}
+With $k\approx0.1$ the estimate is smooth but follows the gyro almost open-loop (it takes ${\sim}10$\,s to correct, leaving the slow errors seen in the figure); with $k\approx10$ it follows the raw inclinometer (noisy, and in flight biased by
+specific force, which is the main weakness on Exp.~D). The nominal value balances the two: it gives the lowest synthetic RMS error of the three, as expected from the optimality of the Kalman gain when $Q$ and $R$ match the true noise.
+On real data the optimum depends on how well the assumed $R$ describes the \emph{flight} inclinometer error (not the rest-noise of Exp.~A), which is why it was taken from the flight data. In practice $Q$ and $R$ are tuning knobs, and
+tuning amounts to choosing the crossover frequency $k$ between the two sensors.
+\begin{figure}[H]\centering
+\includegraphics[width=.75\linewidth]{figs/q4_3_resp.pdf}
+\caption{Top: Exp.~D pitch for three tunings and the onboard estimate. Bottom: synthetic estimation error for the same tunings.}\label{fig:q43resp}
+\end{figure}

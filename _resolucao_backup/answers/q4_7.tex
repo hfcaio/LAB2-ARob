@@ -1,0 +1,59 @@
+\textbf{Theory (4.1--4.5 for roll).} The models are identical to pitch with $q\to p$, $\theta\to\phi$: without bias
+$\dot\phi=p_m+w,\ y=\phi_m+v$; with bias $\dot\phi=p_m-b_x+w,\ \dot b_x=w_b$ (so $p_m=p+b_x$), where $p_m=$ \texttt{gyr(:,1)} and
+$\phi_m=\operatorname{atan2}(-a_y,-a_z)$. Hence, with constant gains, the transfer functions are exactly those of 4.2/4.4:
+\begin{align*}
+\hat\phi &= \tfrac{k}{s+k}\,\phi_m+\tfrac{s}{s+k}\,\tfrac{p_m}{s}, &
+\hat\phi &= \tfrac{k_1 s+k_2}{s^2+k_1 s+k_2}\,\phi_m+\tfrac{s^2}{s^2+k_1 s+k_2}\,\tfrac{p_m}{s},
+\end{align*}
+both pairs sum to $1$, so the roll filters are \emph{complementary} (low-pass on the inclinometer, high-pass on the integrated gyro),
+with the same advantages/limitations as in 4.5. The effect of $Q/R$ is also the same (larger $Q/R$: higher gain, more
+trust in the accelerometer). A bias in $p_m$ gives a steady error $b/k$ in the bias-free filter and zero in the filter with bias.
+Numerically (discrete, $T_s=15$~ms, fresh packets only) $\sum$ of the two transfer functions was checked to be $1$ to $10^{-12}$.
+\textbf{What changes} is only the data: the roll noise levels and, above all, the inclinometer offset discussed below.
+
+\textbf{Design and tuning.} Steady-state gains with \texttt{kalman()} (\texttt{kf\_roll.m}). Parameters from the Section~3 covariances:
+gyro noise $\mathrm{var}(p)=5.3\cdot10^{-7}$ (rad/s)$^2$ at rest (Exp.~A) and inclinometer noise
+$R=\mathrm{var}(a_y)/g^2=4.3\cdot10^{-5}$~rad$^2$ (std $0.38^\circ$, Exp.~C). With $Q_w=\kappa\,\mathrm{var}(p)_A$, the RMSE against the onboard
+$\phi$ in hover (Exp.~C) over $\kappa=1\ldots10^5$ has a minimum $0.40^\circ$ at $\kappa=100$ (it is $1.14^\circ$ for $\kappa=1$ and $0.57^\circ$ for $\kappa=10^5$), because the
+raw variance understates the true disturbance (vibration, specific force) acting on $\phi_m$. This gives $L=0.0165$ per sample, i.e. $k\approx L/T_s=1.10$~rad/s (corner $0.18$~Hz, pole $0.9835$).
+With bias, $Q_b=0.1\,Q_w$ gives $L=[0.0206\ \ {-0.0052}]$, poles $0.984$ and $0.995$. $Q_b$ was set with the artificial-bias test below.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.49\linewidth]{figs/q4_7_kf_expC.pdf}\hfill
+\includegraphics[width=0.49\linewidth]{figs/q4_7_offset_expA.pdf}
+\caption{Roll KF. Left: Exp.~C (hover, inclinometer corrected by the Exp.~A offset). Right: Exp.~A (rest) with the \emph{raw} inclinometer: neither filter removes the $2.1^\circ$ offset; only calibrating $\phi_m$ does.}
+\label{fig:q47a}\end{figure}
+
+\textbf{Results.} RMSE against the onboard $\phi$ [deg] (inclinometer calibrated with the Exp.~A offset, see below):
+\begin{center}\small\begin{tabular}{lcccc}\hline
+ & raw $\phi_m$ & $\phi_m$ calibr. & KF (4.1) & KF + bias (4.4)\\\hline
+Exp.~A (rest) & 2.09 (raw) & 0.23 & 0.09 & 0.13\\
+Exp.~C (hover) & 2.41 (raw) & 0.60 & 0.40 & 0.36\\
+Exp.~D (roll = disturbance, $5$--$18.4$~s) & 1.97 (raw) & 1.19 & 0.54 & 0.62\\
+Exp.~B (rotors on, held by hand) & 6.49 (raw) & 7.96 & 7.41 & 6.69\\\hline
+\end{tabular}\end{center}
+In hover the KF cuts the inclinometer error by $\approx$33\% ($0.60^\circ\to0.40^\circ$) and removes the vibration-induced noise; the accelerometer cannot see the true $\phi$ because it measures
+specific force. In Exp.~D the commanded step is on pitch, so roll is only excited by coupling/disturbances ($\phi$ stays within a few degrees): the roll KF behaves as in hover
+($1.19^\circ\to0.54^\circ$). In Exp.~B the drone is held by hand with rotors on: large uncontrolled tilts and strong accelerations ($\mathrm{var}(a_y)\approx0.9$ (m/s$^2$)$^2$) make the
+inclinometer, and thus every filter, poor (the calibrated $\phi_m$ is even worse than the raw one), so Exp.~B is not used to rank filters.
+The bias state brings no relevant gain here because the gyro bias is tiny ($\bar p=0.00085$~rad/s $=0.049^\circ$/s in Exp.~A; $\hat b_x=0.0008$ rad/s at the end of Exp.~A, matching it).
+
+\textbf{Artificial bias (4.4 suggestion).} Adding $b=0.05$ rad/s to $p_m$ in Exp.~C: the filter without bias settles with a $2.8^\circ$ mean error ($\approx b/k=2.6^\circ$, RMSE $2.85^\circ$), while the filter with bias recovers $\hat b_x\to0.0504$ rad/s (true $0.0503$) and RMSE $0.75^\circ$ for $Q_b/Q_w=0.1$
+(Fig.~\ref{fig:q47b}). Smaller $Q_b$ is slower ($Q_b/Q_w=10^{-3}$: $\hat b=0.025$ at the end, RMSE $2.08^\circ$); larger values converge faster but make $\hat b$ noisier ($Q_b/Q_w=1$ degrades the angle RMSE).
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.49\linewidth]{figs/q4_7_bias_test.pdf}\hfill
+\includegraphics[width=0.49\linewidth]{figs/q4_7_tf_mag.pdf}
+\caption{Left: artificial gyro bias $b=0.05$~rad/s in Exp.~C, for three $Q_b/Q_w$. Right: $|G|$ of the two roll filters; the gyro branch is the complement of the inclinometer branch (low-pass vs.\ high-pass, same $\approx0.2$--$0.3$~Hz crossover).}
+\label{fig:q47b}\end{figure}
+
+\textbf{The roll mounting bias ($\approx2.3^\circ$).} At rest (Exp.~A) $\bar a_y=-0.37$~m/s$^2$ and $\bar a_z=-9.93$~m/s$^2$, so the raw inclinometer reads $\phi_m=2.29^\circ$
+while the onboard estimate reads $0.22^\circ$ (offset $2.07^\circ$; $\bar p=0.049^\circ$/s, so the gyro is not the cause). In Exp.~C $\bar\phi_m=2.41^\circ$ vs.\ onboard $0.06^\circ$.
+The filter with bias \emph{does not correct it}: $\hat b_x$ models a constant error in the gyro, i.e.\ a ramp in the angle; a constant offset in $y=\phi_m$ is a different error
+(a step in the measurement), unobservable from $(p_m,\phi_m)$ since any level of $\phi$ is consistent with the gyro. The filter simply trusts $\phi_m$ at low frequency ($G_{\phi_m\to\hat\phi}(0)=1$),
+so $\hat\phi\to\phi_m$: in Exp.~A (after 5~s) the mean of $\phi_m$, KF 4.1 and KF 4.4 is $2.29^\circ$, $2.31^\circ$, $2.27^\circ$, with $\hat b_x\approx0$ (Fig.~\ref{fig:q47a}, right), and the RMSE of the
+raw $\phi_m$ ($2.09^\circ$) and of both KFs ($2.11^\circ$, $2.08^\circ$) is the same. The source is the accelerometer (sensor offset/scale and/or mounting tilt): $|\bar f|=9.92$~m/s$^2\neq g$ and a pure rotation of $2.07^\circ$
+would give $a_y=-0.36$~m/s$^2$, so part of it is a scale/offset error of the accelerometer.
+\emph{Fix = calibration}: subtract a constant $\phi_0=\overline{\phi_m}$ measured at rest on a level surface (here the Exp.~A mean, $2.07^\circ$ relative to the onboard estimate;
+ideally using a spirit level, or $a_y$ offset $-0.37$~m/s$^2$ plus a scale on $|f|$), before feeding the filter. With it the KFs' errors in Exp.~A drop from $2.1^\circ$ to $0.09$--$0.13^\circ$ and in Exp.~C from $2.4^\circ$ to $0.36$--$0.40^\circ$.
+Note that the offset is an \emph{input} correction; the same offset in pitch would be handled identically, and the integrated filter of Section~5 should use the calibrated measurements.

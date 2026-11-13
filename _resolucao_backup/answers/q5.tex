@@ -1,0 +1,78 @@
+\paragraph{Note on the reference.} The full text of the paper was not accessible to us, so system (2) is
+\emph{derived} below from first principles (it is the standard gravity-direction/bias model used in that
+work); the notation may differ slightly from the paper's.
+
+\paragraph{Nominal system.} Let $\bm d=\bm R^\top \bm e_3$ be the unit gravity direction in the body frame
+($\bm R$: body-to-inertial, $z$ down), $\bm\omega=\bm\omega_m-\bm b$ the true angular rate and $\bm b$ the
+(constant) gyro bias, $\bm S(\cdot)$ the cross-product matrix. Since $\dot{\bm R}=\bm R\bm S(\bm\omega)$,
+\begin{equation}
+\dot{\bm d}=-\bm S(\bm\omega_m-\bm b)\,\bm d=-\bm S(\bm\omega_m)\bm d-\bm S(\bm d)\bm b,\qquad
+\dot{\bm b}=\bm 0,\qquad \bm y=\bm d+\bm v,
+\end{equation}
+with $\bm y=-\bm f/\|\bm f\|$ the normalised accelerometer (specific force $\bm f=-g\bm d$ at rest).
+Hence, with $\bm x=[\bm d;\bm b]\in\mathbb R^6$,
+$\dot{\bm x}=\begin{bmatrix}-\bm S(\bm\omega_m) & -\bm S(\bm d)\\ \bm 0&\bm 0\end{bmatrix}\bm x$ (bilinear in
+$\bm d,\bm b$; linear time-varying once $\bm d$ in the off-diagonal block is taken along the trajectory),
+$\bm y=[\bm I\;\bm 0]\bm x$. Pitch and roll follow from $\bm d=[-\sin\theta,\ \sin\phi\cos\theta,\ \cos\phi\cos\theta]^\top$:
+\begin{equation}
+\hat\theta=\arcsin(-\hat d_1),\qquad \hat\phi=\operatorname{atan2}(\hat d_2,\hat d_3).
+\end{equation}
+
+\paragraph{Observability.} Take $\bm\omega_m$ and $\bm d$ as known. The bias enters through $\dot{\bm d}\ni-\bm S(\bm d)\bm b=\bm b\times\bm d$, which is
+orthogonal to $\bm d$: a bias component parallel to $\bm d$ produces no change in $\bm d$. With $\bm d$ (nearly) constant (rest, hover),
+only the two components of $\bm b$ perpendicular to $\bm d$ are observable; for a near-level vehicle $\bm d\approx\bm e_3$ these are $b_p,b_q$, while $b_r$
+(yaw-rate gyro, along $\bm d$) is \emph{not observable}. It would become observable only if $\bm d$ changes direction in the body frame, i.e.\ with large
+roll/pitch excitation; our experiments have $|\theta|,|\phi|\lesssim6^\circ$, so $b_r$ is practically unobservable. The filter confirms this: the posterior std of $b_p,b_q$ falls to
+$(0.25,0.7)\times10^{-3}$ rad/s but that of $b_r$ stays at $\approx0.017$ rad/s (prior: 0.02).
+
+\paragraph{Filter (discrete EKF, $T_s=t_k-t_{k-1}\approx1/77$ s, fresh samples only).}
+Prediction (exact rotation, Rodrigues, $\bm\omega=\bm\omega_{m,k-1}-\hat{\bm b}$):
+$\hat{\bm d}_k^-=\left(\bm I-\sin\!\vartheta\,\bm S(\bm n)+(1-\cos\vartheta)\bm S(\bm n)^2\right)\hat{\bm d}_{k-1}$,
+$\vartheta=\|\bm\omega\|T_s$, $\bm n=\bm\omega/\|\bm\omega\|$; $\hat{\bm b}^-=\hat{\bm b}$;
+$\bm P^-=\bm\Phi\bm P\bm\Phi^\top+\bm Q$, $\bm\Phi\approx\bm I+\bm AT_s+(\bm AT_s)^2/2$,
+$\bm A=\begin{bmatrix}-\bm S(\bm\omega)&-\bm S(\hat{\bm d})\\ \bm0&\bm0\end{bmatrix}$. Update with $\bm H=[\bm I\ \bm 0]$,
+$\bm K=\bm P^-\bm H^\top(\bm H\bm P^-\bm H^\top+\bm R)^{-1}$, $\hat{\bm x}=\hat{\bm x}^-+\bm K(\bm y-\hat{\bm d}^-)$, then $\hat{\bm d}\leftarrow\hat{\bm d}/\|\hat{\bm d}\|$
+(Joseph form for $\bm P$).
+
+\paragraph{Noise matrices (from Sec.~3).} The gyro noise $\bm n_g$ ($\sigma_g=[0.73,0.73,0.71]\times10^{-3}$ rad/s, Exp.~A)
+enters $\dot{\bm d}$ as $\bm S(\bm d)\bm n_g$, so
+$\bm Q=\operatorname{blkdiag}\!\big(\bm S(\hat{\bm d})\operatorname{diag}(\sigma_g^2)\bm S(\hat{\bm d})^\top T_s,\ \sigma_b^2T_s\bm I\big)$, with a small bias random walk
+$\sigma_b=10^{-5}$ rad/s$/\sqrt{\rm s}$ (tuned). The accelerometer std in hover (Exp.~C) is $[0.075,0.065,0.074]$ m/s$^2$,
+so $\bm R=\kappa\,\operatorname{diag}(\sigma_a^2)/g^2$ with $\kappa=25$ (i.e.\ std $\times5$): the Sec.~3 value alone
+gave $\hat b_r$ drifting to $-0.2$ rad/s in hover, since the accelerometer in flight senses specific force, not only
+gravity (rotor drag, vibration). $\bm P_0=\operatorname{blkdiag}(0.05^2\bm I,0.02^2\bm I)$, $\hat{\bm d}_0=\bm y_0$, $\hat{\bm b}_0=\bm 0$.
+Sweeping $\sigma_b\in\{10^{-6},10^{-5},10^{-4}\}$ and $\kappa\in\{1,25\}$ showed $\kappa$ matters (hover pitch RMSE vs.\ onboard $0.51^\circ\to0.38^\circ$) and
+$\sigma_b$ barely does.
+
+\begin{figure}[H]\centering
+\includegraphics[width=.49\linewidth]{figs/q5_expA.pdf}\hfill\includegraphics[width=.49\linewidth]{figs/q5_expC.pdf}\\[2pt]
+\includegraphics[width=.49\linewidth]{figs/q5_expD.pdf}
+\caption{Filter (2) on Exp.~A (rest), C (hover) and D (5--18.4 s): $\hat\theta,\hat\phi$ vs.\ onboard and raw inclinometer, and
+$\hat{\bm b}$ (dashed: mean gyro of each window).}\label{fig:q5}
+\end{figure}
+
+\paragraph{Results.}
+\begin{center}\small\begin{tabular}{lccc}\toprule
+ & Exp.~A (rest) & Exp.~C (hover) & Exp.~D (step)\\\midrule
+$\hat{\bm b}(t_f)$ [$10^{-3}$ rad/s] & $[0.89,-1.80,-11.5]$ & $[0.83,-1.43,-31]$ & $[0.40,-4.6,-0.2]$\\
+mean gyro [$10^{-3}$ rad/s] & $[0.99,-1.57,0.05]$ & $[-0.38,0.45,-1.18]$ & $[-0.20,0.60,5.5]$\\
+RMSE $\theta$ vs.\ onboard, KF / raw [deg] & 0.99 / 0.92 & 0.38 / 0.73 & 1.82 / 3.06\\
+RMSE $\phi$ vs.\ onboard, KF / raw [deg] & 1.95 / 2.09 & 2.20 / 2.44 & 1.81 / 2.06\\
+std $\theta$ KF / onboard / raw [deg] & 0.21 / 0.24 / 0.43 & 0.49 / 0.38 / 0.46 & 2.44 / 2.17 / 2.10\\\bottomrule
+\end{tabular}\end{center}
+\textbf{Exp.~A:} $\hat b_p,\hat b_q$ converge to the mean gyro readings ($0.99,-1.57\times10^{-3}$ rad/s) (Fig.~\ref{fig:q5}),
+and the angle noise is lower than both onboard (0.24$^\circ$) and raw (0.43$^\circ$): std $0.21^\circ/0.15^\circ$. The
+$\approx2^\circ$ roll RMSE is a constant offset between the accelerometer and the onboard estimate (calibration), common to the raw inclinometer. $\hat b_r=-0.0115$ rad/s is
+\emph{not} the true value ($0.00005$): it is unobservable and only random-walks within its $0.019$ rad/s uncertainty.
+\textbf{Exp.~C (hover):} $\hat\theta$ is closer to the onboard estimate than the raw inclinometer (0.38$^\circ$ vs.\ 0.73$^\circ$), because the gyro
+bridges the vibration/specific-force errors; the bias estimates are not meaningful here, since the ``mean gyro'' is no longer a bias (the vehicle really rotates, controlled by the
+onboard loop) and $b_r$ is again unobservable.
+\textbf{Exp.~D:} the filter reacts to the pitch pulse (10--13 s) as fast as the onboard estimate, whereas the raw inclinometer lags it visibly and the
+RMSE drops from $3.06^\circ$ to $1.82^\circ$. After the pulse, however, $\hat\theta$ falls $\approx2^\circ$ below the onboard value: the gyro
+is integrated with a still-wrong $\hat b_q$, which the weak accelerometer weight ($\kappa=25$) corrects slowly --- the usual trade-off between response and
+noise/bias rejection. The filter is also not consistent with a pure gravity measurement during manoeuvres (accelerations), a limitation of the nominal model that the paper handles with
+extra measurements/robustness arguments.
+
+\paragraph{Conclusion.} The filter gives a gravity-direction estimate with lower noise than the raw inclinometer, no lag, and an observable bias for the two gyros
+perpendicular to gravity ($b_p,b_q$), while $b_\psi$ (yaw gyro) cannot be estimated from the accelerometer alone and would need a magnetometer or large
+attitude excitation. Code: \texttt{group17\_lab2/kf\_batista.m}.
