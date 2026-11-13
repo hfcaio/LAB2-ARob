@@ -1,0 +1,1083 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\geometry{top=2.2cm,bottom=2.3cm,left=2.2cm,right=2.2cm}
+
+\usepackage{amsmath,amssymb,bm}
+\setcounter{MaxMatrixCols}{20}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------- metadata ---
+\newcommand{\Institution}{Instituto Superior Técnico}
+\newcommand{\Programme}{MEAer}
+\newcommand{\CourseTitle}{Unmanned Aerial Vehicles}
+\newcommand{\ReportTitle}{Estimation of Motion Variables of the Parrot AR.Drone}
+\newcommand{\LabNumber}{2}
+\newcommand{\Semester}{2026/2027 -- First Semester}
+\newcommand{\GroupNumber}{17}            % TODO: group number
+\newcommand{\Instructor}{Prof.\ David Cabecinhas}
+
+% name / number / (one line per author)
+\newcommand{\AuthorList}{%
+  \AuthorRow{IST1116311}{Caio Hokama Freitas}%
+  \AuthorRow{IST1113325}{Majid Attarzadeh}%   TODO: real IST number
+}
+
+% ------------------------------------------------------------ colours ---
+\definecolor{istblue}{HTML}{03ABE6}
+\definecolor{qfill}{HTML}{E4F6FD}
+\definecolor{qtitle}{HTML}{0288B0}
+\definecolor{greyfill}{HTML}{F7F7F7}
+\definecolor{greyline}{HTML}{D9D9D9}
+\definecolor{tagT}{HTML}{B45309}
+\definecolor{tagL}{HTML}{2E7D32}
+
+% ------------------------------------------------- header and footer ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize IST}
+\fancyhead[R]{\footnotesize ULisboa}
+\fancyfoot[C]{\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ------------------------------------------- question / answer boxes ---
+% #1 is T or L; the colours are named tagT and tagL.
+\newcommand{\tagpill}[1]{%
+  \begingroup
+  \setlength{\fboxsep}{2pt}%
+  \colorbox{tag#1}{\textcolor{white}{\scriptsize\bfseries~#1~}}%
+  \endgroup}
+
+% \tagpills{T}, \tagpills{L}, \tagpills{T+L} or \tagpills{T + L}: one pill per tag, joined by "+".
+\makeatletter
+\newcommand{\tagpills}[1]{%
+  \edef\tagpills@list{\zap@space#1 \@empty}%
+  \expandafter\tagpills@next\tagpills@list+\@nil}
+\def\tagpills@next#1+#2\@nil{%
+  \tagpill{#1}%
+  \ifx\relax#2\relax\else
+    \hspace{3pt}{\small\bfseries\textcolor{qtitle}{+}}\hspace{3pt}%
+    \tagpills@next#2\@nil
+  \fi}
+\makeatother
+
+% \begin{question}{2.1}{T}  ... \end{question}
+\newenvironment{question}[2]{%
+  \begin{tcolorbox}[breakable,enhanced,colback=qfill,colframe=qfill,
+    borderline west={3pt}{0pt}{istblue},boxrule=0pt,arc=2pt,
+    left=8pt,right=8pt,top=7pt,bottom=7pt,before skip=12pt,after skip=6pt]
+  \textcolor{qtitle}{\bfseries Question #1}\hspace{4pt}\tagpills{#2}\par\vspace{3pt}%
+}{\end{tcolorbox}}
+
+\newenvironment{answer}{%
+  \begin{tcolorbox}[breakable,enhanced,colback=white,colframe=greyline,
+    boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=7pt,bottom=7pt,
+    before skip=0pt,after skip=12pt]
+}{\end{tcolorbox}}
+
+\newcommand{\todoanswer}{\emph{Write your answer here.}}
+
+% ----------------------------------------------------- code listings ---
+\lstdefinestyle{mat}{
+  language=Matlab, basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue!60!black}, commentstyle=\color{green!40!black},
+  stringstyle=\color{purple}, numbers=none, frame=single,
+  rulecolor=\color{greyline}, backgroundcolor=\color{greyfill},
+  breaklines=true, showstringspaces=false, columns=fullflexible,
+}
+\lstset{style=mat}
+
+% --------------------------------------------------------- shortcuts ---
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\fB}{\{B\}}
+\newcommand{\fI}{\{I\}}
+\newcommand{\Bp}{{}^{B}\bm{p}}
+
+\captionsetup{font=small,labelfont=bf}
+
+% =======================================================================
+\begin{document}
+
+% ------------------------------------------------------- cover page ---
+\newcommand{\AuthorRow}[2]{%
+  \makebox[3.2cm][l]{\textbf{N.\textsuperscript{o}: #1}}%
+  \makebox[8.2cm][l]{\textbf{Name: #2}}%
+  \textbf{Signature:}\\[1.4ex]}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\noindent\includegraphics[width=3.2cm]{figs/ist_logo.png}
+
+\vspace{1.6cm}
+\begin{center}
+  {\large \Institution}\\[1.0em]
+  {\large \Programme}\\[2.4em]
+  {\LARGE \bfseries \CourseTitle}\\[1.2em]
+  {\normalsize \Semester}
+
+  \vspace{4.2cm}
+
+  {\LARGE \underline{Laboratory \LabNumber}}\\[0.8em]
+  {\small \itshape \ReportTitle}\\[1.8em]
+  {\normalsize \bfseries \underline{Group \GroupNumber}}
+\end{center}
+
+\vspace{1.4em}
+\noindent\AuthorList
+
+\vfill
+\begin{center}
+  {\normalsize \underline{Instructor: \Instructor}}
+\end{center}
+\vspace{2.2cm}
+\end{titlepage}
+
+\setcounter{page}{1}
+\setcounter{section}{2}   % the guide's Section 1 (Introduction) is not reproduced
+
+% =====================================================================
+\section{Modeling and characterization of the sensors}
+
+% ------------------------------------------------------------ Q3.1 ---
+\begin{question}{3.1}{L}
+    Characterize the accelerometers and rate gyro disturbances that are present on the measurements, by computing the mean and covariance of the measurements obtained in \emph{Experiment A}.
+\end{question}
+
+\begin{answer}
+In Experiment A, the drone was kept stationary on the ground
+with its motors switched off. The accelerometer and gyroscope
+measurements were analyzed to characterize the sensor disturbances.
+Only the interval $10$--$24$\,s was used, since the table was touched
+before and after it. The accelerometer is given in mg and the rate gyro
+in deg/s.
+
+The sample mean was computed as
+\[
+\boldsymbol{\mu} =
+\frac{1}{N}\sum_{k=1}^{N}\mathbf{x}_k,
+\]
+and the sample covariance matrix was calculated as
+\[
+\boldsymbol{\Sigma} =
+\frac{1}{N-1}
+\sum_{k=1}^{N}
+(\mathbf{x}_k-\boldsymbol{\mu})
+(\mathbf{x}_k-\boldsymbol{\mu})^T.
+\]
+
+\paragraph{Accelerometer}
+The estimated mean accelerometer measurement is
+\[
+\boldsymbol{\mu}_{a,A} =
+\begin{bmatrix}
+12.0\\
+-37.8\\
+-1011.1
+\end{bmatrix}.
+\]
+The corresponding covariance matrix is
+\[
+\boldsymbol{\Sigma}_{a,A} =
+\begin{bmatrix}
+11.59 & -0.57 & -0.28\\
+-0.57 & 0.93 & 0.61\\
+-0.28 & 0.61 & 10.79
+\end{bmatrix}.
+\]
+The standard deviations are
+\[
+\boldsymbol{\sigma}_{a,A} =
+\begin{bmatrix}
+3.4044 & 0.9634 & 3.2851
+\end{bmatrix}.
+\]
+The acceleration magnitude was approximately \(1011.9\)
+units. Since the drone was stationary, this measurement is
+mainly associated with gravity. The magnitude suggests a
+scale of approximately \(1000\) units per \(g\), although
+the exact measurement units were not specified in the
+signal metadata.
+
+\paragraph{Gyroscope}
+The estimated mean gyroscope measurement is
+\[
+\boldsymbol{\mu}_{g,A} =
+\begin{bmatrix}
+0.0484\\
+-0.0848\\
+0.0028
+\end{bmatrix}.
+\]
+The covariance matrix is
+\[
+\boldsymbol{\Sigma}_{g,A} =
+\begin{bmatrix}
+0.0018 & 0 & -0.0001\\
+0 & 0.0018 & 0.0001\\
+-0.0001 & 0.0001 & 0.0016
+\end{bmatrix}.
+\]
+The standard deviations are
+\[
+\boldsymbol{\sigma}_{g,A} =
+\begin{bmatrix}
+0.0419 & 0.0421 & 0.0404
+\end{bmatrix}.
+\]
+Ideally, the gyroscope measurements should be zero when
+the drone is stationary. The small non-zero mean values
+indicate possible sensor bias, while the covariance matrix
+describes the measurement variability and noise.
+
+Overall, Experiment A provides a baseline characterization
+of the sensor disturbances in the absence of motor-induced
+vibrations.
+\end{answer}
+
+% ------------------------------------------------------------ Q3.2 ---
+\begin{question}{3.2}{L}
+    Repeat the previous computations for \emph{Experiment B}. Discuss the new sources of disturbances leading to the increase of uncertainty on the measurements.
+\end{question}
+
+\begin{answer}
+The mean and covariance of the accelerometer and gyroscope measurements were calculated using the data collected in Experiment B, in the interval $10$--$33$\,s (after the rotor spin-up). The sample mean is given by
+\[
+\boldsymbol{\mu}=\frac{1}{N}\sum_{k=1}^{N}\mathbf{x}_k
+\]
+and the sample covariance matrix is
+\[
+\boldsymbol{\Sigma}=
+\frac{1}{N-1}\sum_{k=1}^{N}
+(\mathbf{x}_k-\boldsymbol{\mu})
+(\mathbf{x}_k-\boldsymbol{\mu})^T.
+\]
+
+\paragraph{Accelerometer}
+The mean accelerometer measurement is
+\[
+\boldsymbol{\mu}_{a,B}=
+\begin{bmatrix}
+47.7\\
+61.9\\
+-1006.8
+\end{bmatrix}.
+\]
+The covariance matrix is
+\[
+\boldsymbol{\Sigma}_{a,B}=
+\begin{bmatrix}
+297 & 249 & -26\\
+249 & 6287 & 289\\
+-26 & 289 & 305
+\end{bmatrix}.
+\]
+The corresponding standard deviations are
+\[
+\boldsymbol{\sigma}_{a,B}=
+\begin{bmatrix}
+17.2241\\
+79.2897\\
+17.4548
+\end{bmatrix}.
+\]
+
+\paragraph{Gyroscope}
+The mean gyroscope measurement is
+\[
+\boldsymbol{\mu}_{g,B}=
+\begin{bmatrix}
+-0.1380\\
+0.2072\\
+-0.3888
+\end{bmatrix}.
+\]
+The covariance matrix is
+\[
+\boldsymbol{\Sigma}_{g,B}=
+\begin{bmatrix}
+27.0420 & 6.4765 & 21.9402\\
+6.4765 & 10.4781 & 11.2626\\
+21.9402 & 11.2626 & 34.8483
+\end{bmatrix}.
+\]
+The corresponding standard deviations are
+\[
+\boldsymbol{\sigma}_{g,B}=
+\begin{bmatrix}
+5.2002\\
+3.2370\\
+5.9032
+\end{bmatrix}.
+\]
+
+Compared with Experiment A, the uncertainty in the measurements increases considerably when the motors are running. This is particularly evident in the accelerometer \(y\)-axis and in all three gyroscope axes. The accelerometer standard deviation along the \(y\)-axis increases from approximately \(0.96\) to \(79.29\), while the gyroscope standard deviations also increase substantially.
+
+The main additional disturbance source is the mechanical vibration generated by the motors and propellers. These vibrations are transmitted through the drone frame to the IMU, affecting both the accelerometer and gyroscope measurements. Motor rotation and propeller imbalance may also introduce periodic disturbances.
+
+The increase is not the same in every direction: the accelerometer standard deviation grows by a factor of about \(5\) along \(x\) and \(z\) and by a factor of about \(80\) along \(y\).
+
+Overall, Experiment B demonstrates that operating the motors introduces significant additional disturbances. The calculated covariance matrices represent the total measurement variability, including sensor noise and motor-induced vibrations, rather than the intrinsic sensor noise alone.
+\end{answer}
+
+% ------------------------------------------------------------ Q3.3 ---
+\begin{question}{3.3}{L}
+    Repeat the previous computations for \emph{Experiment C}. Discuss the new sources of disturbances leading to the increase of uncertainty on the measurements.
+\end{question}
+
+\begin{answer}
+The mean and covariance of the accelerometer and gyroscope measurements were calculated using the data collected in Experiment C, in the interval $9$--$30$\,s, where the drone is hovering (take-off and landing excluded).
+
+The sample mean is calculated as
+\[
+\boldsymbol{\mu}=\frac{1}{N}\sum_{k=1}^{N}\mathbf{x}_k
+\]
+and the sample covariance matrix is
+\[
+\boldsymbol{\Sigma}=
+\frac{1}{N-1}\sum_{k=1}^{N}
+(\mathbf{x}_k-\boldsymbol{\mu})
+(\mathbf{x}_k-\boldsymbol{\mu})^T.
+\]
+
+\paragraph{Accelerometer}
+The mean accelerometer measurement is
+\[
+\boldsymbol{\mu}_{a,C}=
+\begin{bmatrix}
+8.0\\
+-42.7\\
+-1008.6
+\end{bmatrix}.
+\]
+The covariance matrix is
+\[
+\boldsymbol{\Sigma}_{a,C}=
+\begin{bmatrix}
+59.1 & 28.3 & 20.8\\
+28.3 & 43.1 & 19.5\\
+20.8 & 19.5 & 56.8
+\end{bmatrix}.
+\]
+The corresponding standard deviations are
+\[
+\boldsymbol{\sigma}_{a,C}=
+\begin{bmatrix}
+7.6897\\
+6.5676\\
+7.5346
+\end{bmatrix}.
+\]
+
+\paragraph{Gyroscope}
+The mean gyroscope measurement is
+\[
+\boldsymbol{\mu}_{g,C}=
+\begin{bmatrix}
+-0.0654\\
+0.0396\\
+-0.0203
+\end{bmatrix}.
+\]
+The covariance matrix is
+\[
+\boldsymbol{\Sigma}_{g,C}=
+\begin{bmatrix}
+2.0934 & -0.3778 & -0.4270\\
+-0.3778 & 2.5058 & 0.2251\\
+-0.4270 & 0.2251 & 2.5508
+\end{bmatrix}.
+\]
+The corresponding standard deviations are
+\[
+\boldsymbol{\sigma}_{g,C}=
+\begin{bmatrix}
+1.4469\\
+1.5830\\
+1.5971
+\end{bmatrix}.
+\]
+
+Compared with Experiment A, the measurements in Experiment C show considerably higher variability. The accelerometer standard deviations increase in all three axes, to approximately \(7\) in each of them. The gyroscope standard deviations also increase significantly, from about \(0.04\) to about \(1.5\).
+
+In addition to motor and propeller vibrations, several disturbance sources are present during hovering flight. These include small attitude variations, translational movements, altitude corrections, and continuous control actions performed by the flight controller to maintain the hovering position. External disturbances, such as air currents, may also affect the drone.
+
+The accelerometer measures both gravitational acceleration and the drone's actual linear acceleration. Consequently, during flight, its measurements do not represent gravity alone. This contributes to the increased variability observed in the accelerometer data.
+
+The covariance matrices therefore describe the combined effects of sensor noise, mechanical vibrations, and actual drone motion. They should not be interpreted as measurements of intrinsic sensor noise alone.
+\end{answer}
+
+% ------------------------------------------------------------ Q3.4 ---
+\begin{question}{3.4}{L}
+   To later evaluate filtering effects, compute the pitch and roll inclinometer data from the accelerometer measurements, and identify these estimates as raw pitch and roll measurements. Comment the results.
+\end{question}
+
+\begin{answer}
+\paragraph{Computation of pitch and roll from accelerometer measurements}
+The pitch and roll angles can be estimated from the accelerometer measurements by assuming that the measured acceleration is mainly due to gravity.
+
+Since the accelerometer \(z\)-axis measurement is negative when the drone is at rest, the following expressions are used:
+\[
+\theta_{\mathrm{raw}} =
+\operatorname{atan2}
+\left(
+a_x,\sqrt{a_y^2+a_z^2}
+\right)
+\]
+\[
+\phi_{\mathrm{raw}} =
+\operatorname{atan2}(-a_y,-a_z)
+\]
+where \(a_x\), \(a_y\), and \(a_z\) are the accelerometer measurements. The resulting angles are converted from radians to degrees:
+\[
+\theta_{\mathrm{deg}}=
+\theta_{\mathrm{raw}}\frac{180}{\pi}
+\]
+\[
+\phi_{\mathrm{deg}}=
+\phi_{\mathrm{raw}}\frac{180}{\pi}.
+\]
+
+The following MATLAB code was used to calculate the angles for each experiment:
+
+\begin{lstlisting}
+% acc: accelerometer samples of one experiment, inside its time window
+pitch = rad2deg(atan2( acc(:,1), sqrt(acc(:,2).^2 + acc(:,3).^2)));
+roll  = rad2deg(atan2(-acc(:,2), -acc(:,3)));
+
+mean_pitch = mean(pitch);   std_pitch = std(pitch);
+mean_roll  = mean(roll);    std_roll  = std(roll);
+\end{lstlisting}
+
+\paragraph{Results}
+The calculated mean and standard deviation of the raw pitch and roll angles are summarized below.
+
+\begin{center}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Experiment & Mean Pitch (deg) & Std.\ Pitch (deg) & Mean Roll (deg) & Std.\ Roll (deg) \\
+\midrule
+A & $0.6790$ & $0.1927$ & $2.1390$  & $0.0536$ \\
+B & $2.6975$ & $0.9647$ & $-3.5057$ & $4.4671$ \\
+C & $0.4535$ & $0.4367$ & $2.4243$  & $0.3650$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The same time intervals of Questions 3.1--3.3 were used. At rest (A) the raw angles are almost constant, and their mean is not zero ($2.1^\circ$ in roll), while the onboard estimate reads $0.1^\circ$ in the same interval, so this is an offset of the raw measurement and not noise. With the rotors on (B) the vibration goes directly into the angles, and the roll reaches a standard deviation of $4.5^\circ$ with the drone on the ground. In hover (C) the standard deviation is about $0.4^\circ$ in both angles; these are the values used as measurement noise in Section 4.
+\end{answer}
+
+% =====================================================================
+\section{Kalman filters}
+
+% ------------------------------------------------------------ Q4.1 ---
+\begin{question}{4.1}{T + L}
+ Design, implement, and evaluate a steady-state Kalman filter for pitch estimation
+based on measurements of the pitch inclinometer and on rate gyro measurement $\omega_{ym}$. To tackle the filter gain computation you can use kalman() or estim() Matlab commands.
+\end{question}
+
+\begin{answer}
+In a Kalman filter the rate gyro is treated as a known
+\emph{input} (it measures the derivative of the angle), and the
+inclinometer as the \emph{output} (it measures the angle itself).
+For small angles, $\dot\theta\approx q$ and $\dot\phi\approx p$, so for
+pitch
+\[
+  \dot\theta=\omega_{y_m}+w_\theta,\qquad
+  y_\theta=\theta+v_\theta ,
+\]
+and for roll
+\[
+  \dot\phi=\omega_{x_m}+w_\phi,\qquad
+  y_\phi=\phi+v_\phi ,
+\]
+where $y_\theta\equiv\theta_m$ and $y_\phi\equiv\phi_m$ are the
+inclinometer readings. $w$ is the gyro noise (process noise) and $v$ the
+inclinometer noise (measurement noise), both assumed zero-mean, white and
+independent.
+
+The standard Kalman filter is
+\[
+\begin{aligned}
+&\dot{x} = Ax + Bu + w\\
+&y = Cx + v\\
+&\dot{\hat{x}} = A\hat{x} + Bu + L(y - C\hat{x})
+\end{aligned}
+\]
+
+The two equations are independent so we can combine both angles as
+$\mathbf{x} = [\phi \quad \theta]^T$, $\mathbf{y} = [\phi_m \quad \theta_m]^T$,
+$\mathbf{u} = [\omega_{x_m} \quad \omega_{y_m}]^T$, $A = \mathbf{0}$,
+$B = C = I_2$, which gives the filter implemented
+\[
+\begin{aligned}
+&\dot{x} = u + w\\
+&y = x + v\\
+&\dot{\hat{x}} = u + L(y - \hat{x})
+\end{aligned}
+\]
+with the noise covariances
+$R = \mathrm{diag}(w_\phi,\, w_\theta)$ (gyro, process noise) and
+$Q = \mathrm{diag}(v_\phi,\, v_\theta)$ (inclinometer, measurement noise).
+The gain $L$ is constant and was computed with the \texttt{kalman()}
+command from $R$ and $Q$ (steady-state solution of the Riccati equation),
+\[
+  0 = AP + PA^T + R - PC^TQ^{-1}CP, \qquad L = PC^TQ^{-1}.
+\]
+With $A=\mathbf{0}$, $C=I_2$ and diagonal $R$ and $Q$, each axis gives
+$P^2/Q = R$, so
+\[
+  P = \sqrt{RQ}, \qquad L = \sqrt{R/Q}.
+\]
+
+$R$ and $Q$ are the variances measured in hover (Experiment C, Questions
+3.3 and 3.4), converted to rad/s and rad:
+\[
+  R = \mathrm{diag}(6.38,\ 7.63)\times10^{-4}\ (\mathrm{rad/s})^2, \qquad
+  Q = \mathrm{diag}(4.06,\ 5.81)\times10^{-5}\ \mathrm{rad}^2,
+\]
+\[
+  L = \mathrm{diag}(L_\phi,\ L_\theta) = \mathrm{diag}(3.96,\ 3.62)\ \mathrm{rad/s}.
+\]
+
+The filter is implemented in Simulink as a MATLAB Function block that
+computes $\dot{\hat{x}}$, followed by an integrator. The inclinometer
+readings come from the accelerometer,
+\[
+  \phi_m = \operatorname{atan2}(-a_y,\,-a_z), \qquad
+  \theta_m = \operatorname{atan2}\!\big(a_x,\,\sqrt{a_y^2+a_z^2}\big).
+\]
+
+\paragraph{Simulation}
+In \texttt{ARDroneHoverSim} the rate gyro is simulated by differentiating
+the roll and pitch angles of the model and adding zero-mean Gaussian
+noise of variance $R$; the inclinometer is the angle plus zero-mean
+Gaussian noise of variance $Q$. A step of 1\,m in the $x$ reference at
+$t=10$\,s excites the pitch (Fig.~\ref{fig:sim}, which already includes
+the gyro bias and the filter of Question 4.4). Without bias, the RMS
+error of the pitch goes from $0.43^\circ$ (inclinometer) to
+$0.06^\circ$ (filter), with no visible lag during the manoeuvre.
+
+\paragraph{Experiments}
+The filter was run on the data of Experiments A to E and compared with
+the onboard estimate (pitch in Fig.~\ref{fig:exp-pitch}, roll in
+Fig.~\ref{fig:exp-roll}); the results are discussed in Question 4.6.
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{figs/4_1_sim.pdf}
+\captionof{figure}{Simulation, pitch: inclinometer, filter of Q4.1, filter of Q4.4 and true angle (top) and estimation error (bottom), with a gyro bias of $0.05$\,rad/s.}
+\label{fig:sim}
+\end{center}
+\end{answer}
+
+% ------------------------------------------------------------ Q4.2 ---
+\begin{question}{4.2}{T}
+For constant Kalman gains obtain the transfer function from pitch inclinometer measurement $\theta_m$ to pitch estimate $\hat{\theta}$ and the transfer function from the rate-gyro measurement $\omega_{ym}$ to pitch estimate $\hat{\theta}$. Comment on the results
+\end{question}
+
+\begin{answer}
+
+With constant gain $L_\theta$, the steady-state filter of Q4.1 is a linear time-invariant system. Taking Laplace transforms with zero initial conditions,
+\[
+  \dot{\hat\theta} = \omega_{y_m} + L_\theta\,(\theta_m-\hat\theta)
+  \quad\Longrightarrow\quad
+  s\hat\theta(s) = \omega_{y_m}(s) + L_\theta\,\big(\theta_m(s)-\hat\theta(s)\big),
+\]
+so
+\begin{equation}
+  \small
+  \hat\theta(s) = \frac{L_\theta}{s+L_\theta}\,\theta_m(s) + \frac{1}{s+L_\theta}\,\omega_{y_m}(s)
+  \,\Rightarrow\,
+  \hat\theta(s) = \underbrace{\frac{L_\theta}{s+L_\theta}}_{G_L(s)}\,\theta_m(s)
+  + \frac{1}{s}\,\underbrace{\frac{s}{s+L_\theta}}_{G_H(s)}\,\omega_{y_m}(s)
+  \label{eq:q42_tf}
+\end{equation}
+
+The roll filter is identical, with $\phi_m$ (roll inclinometer), $\omega_{x_m}$ (roll rate gyro) and its own gain $L_\phi$ (computed from the roll $Q$ and $R$):
+\begin{equation}
+  \hat\phi(s) = \underbrace{\frac{L_\phi}{s+L_\phi}}_{G_L(s)}\,\phi_m(s)
+  + \frac{1}{s}\,\underbrace{\frac{s}{s+L_\phi}}_{G_H(s)}\,\omega_{x_m}(s)
+  \label{eq:q42_tf_roll}
+\end{equation}
+Hence the same block diagram applies to both axes (Fig.~\ref{fig:complementary-filter}).
+
+\begin{center}
+\begin{tikzpicture}[
+    >=Latex,
+    blk/.style={draw, thick, minimum width=1.9cm, minimum height=1.05cm, align=center},
+    sblk/.style={draw, thick, minimum width=1.0cm, minimum height=1.05cm, align=center},
+    lbl/.style={font=\small\sffamily, above=2pt},
+    sig/.style={->, thick}
+  ]
+  \node[blk]  (GL)  at (4.2, 1.1)  {$G_L(s)$};
+  \node[sblk] (INT) at (2.0,-1.1)  {$\dfrac{1}{s}$};
+  \node[blk]  (GH)  at (4.2,-1.1)  {$G_H(s)$};
+  \node[draw, thick, circle, minimum size=0.55cm, inner sep=0pt] (sum) at (6.9, 0) {};
+  \node[lbl] at (GL.north) {LPF};
+  \node[lbl] at (GH.north) {HPF};
+  \draw[sig] (0,1.1)  node[left,align=right] {$\theta_m$\\$(\phi_m)$} -- (GL.west);
+  \draw[sig] (0,-1.1) node[left,align=right] {$\omega_{y_m}$\\$(\omega_{x_m})$} -- (INT.west);
+  \draw[sig] (INT.east) -- (GH.west);
+  \draw[sig] (GL.east) -| (sum.north);
+  \draw[sig] (GH.east) -| (sum.south);
+  \draw[sig] (sum.east) -- ++(1.3,0) node[right,align=left] {$\hat\theta$\\$(\hat\phi)$};
+\end{tikzpicture}
+\captionof{figure}{Block diagram of the transfer function for pitch estimation; for roll, replace the signals by the ones in parentheses and $L_\theta$ by $L_\phi$.}
+\label{fig:complementary-filter}
+\end{center}
+
+$G_L$ is a first-order low-pass filter with unit DC gain and $G_H$ a
+first-order high-pass filter, both with cutoff frequency $L$. The
+estimate uses the inclinometer at low frequency, where it does not
+drift, and the integrated rate gyro at high frequency, where the
+inclinometer is noisy. With $L_\theta = 3.62$\,rad/s the crossover is at
+$0.58$\,Hz. A constant gyro bias $b_y$ is not rejected, since
+$\tfrac{1}{s}G_H(0) = 1/L_\theta$: it gives a constant error
+$b_y/L_\theta$ in the estimate.
+\end{answer}
+
+% ------------------------------------------------------------ Q4.3 ---
+\begin{question}{4.3}{T}
+Discuss the impact of changing the tuning parameters Q and R.
+\end{question}
+
+\begin{answer}
+
+For the steady state Kalman Filter of Q4.1 the gain is
+$L=\sqrt{R/Q}$, so only the ratio $R/Q$ matters, and $L$ is the cutoff
+frequency of the two filters of Q4.2:
+\begin{itemize}
+  \item increasing $Q$ (or decreasing $R$) means trusting the
+  inclinometer less: $L$ decreases, the estimate follows the integrated
+  gyro for longer ($1/L$) and is less affected by vibration and by
+  linear accelerations, but an initial error takes longer to correct
+  and the error due to a gyro bias, $b/L$, increases;
+  \item decreasing $Q$ (or increasing $R$) means trusting the
+  inclinometer more: $L$ increases and the estimate tends to the raw
+  inclinometer angle.
+\end{itemize}
+
+Fig.~\ref{fig:tuning} shows the filter of Q4.1 with $Q$, $10^2Q$ and
+$10^4Q$. With the measured covariances ($L\approx 3.6$\,rad/s) the
+estimate stays close to the inclinometer, which during the manoeuvres
+does not follow the onboard angle. With $10^2 Q$ ($L\approx
+0.36$\,rad/s) the estimate follows the onboard angle in the step. With
+$10^4 Q$ the filter is almost a pure integration of the gyro and the
+errors accumulated take $1/L\approx 28$\,s to be corrected.
+
+In the filter of Q4.4 there is a third parameter, the variance $R_b$ of
+the bias process noise, which sets how fast the bias estimate converges.
+
+\begin{center}
+\includegraphics[width=0.9\linewidth]{figs/4_3_tuning.pdf}
+\captionof{figure}{Filter of Q4.1 for three values of $Q$: pitch in Experiment D and roll in Experiment E.}
+\label{fig:tuning}
+\end{center}
+\end{answer}
+
+% ------------------------------------------------------------ Q4.4 ---
+\begin{question}{4.4}{T+L}
+Repeat the Kalman filter design, implementation, and evaluation procedure augmenting
+the system with an extra state to capture the bias term on the rate gyro. For that purpose, assume
+that
+\[ \dot b_y = 0 \]
+and
+\[ w_{y_m} = q + b_y \]
+
+Suggestion: In the simulation phase, set an artificial bias on the measurement and plot the bias $b_y$ vs. bias estimate $\hat{b}_y$ to guide the tuning of the filter.
+\end{question}
+
+\begin{answer}
+With $q = \omega_{y_m} - b_y$ the model becomes
+\[
+  \dot\theta = \omega_{y_m} - b_y + w_\theta, \qquad
+  \dot b_y = w_b, \qquad
+  y_\theta = \theta + v_\theta ,
+\]
+where $w_b$ is a fictitious process noise of variance $R_b$ (with
+$R_b=0$ the steady-state gain of the bias is zero). In state space,
+with $x = [\theta \quad b_y]^T$ and $u=\omega_{y_m}$,
+\[
+  A = \begin{bmatrix} 0 & -1\\ 0 & 0 \end{bmatrix},\quad
+  B = \begin{bmatrix} 1\\ 0 \end{bmatrix},\quad
+  C = \begin{bmatrix} 1 & 0 \end{bmatrix},\qquad
+  \mathrm{rank}\begin{bmatrix} C\\ CA \end{bmatrix}
+  = \mathrm{rank}\begin{bmatrix} 1 & 0\\ 0 & -1 \end{bmatrix} = 2,
+\]
+so the bias is observable. The filter is
+\[
+\begin{aligned}
+  &\dot{\hat\theta} = \omega_{y_m} - \hat b_y + L_1(\theta_m - \hat\theta)\\
+  &\dot{\hat b}_y = L_2(\theta_m - \hat\theta)
+\end{aligned}
+\]
+and the Riccati equation with process noise $\mathrm{diag}(R,\,R_b)$ and
+measurement noise $Q$ gives
+\[
+  L_2 = -\sqrt{R_b/Q}, \qquad
+  L_1 = \sqrt{R/Q + 2\sqrt{R_b/Q}} .
+\]
+The implementation is the same block of Q4.1 with the state
+$[\phi \quad \theta \quad b_x \quad b_y]^T$.
+
+\paragraph{Simulation}
+A constant bias $b_y = 0.05$\,rad/s ($2.86$\,deg/s) was added to the
+simulated gyro. Fig.~\ref{fig:sim-bias} shows $\hat b_y$ for three
+values of $R_b$. The poles are the roots of $s^2+L_1s-L_2$; the slow
+one is approximately $L_2/L_1 \approx -\sqrt{R_b/R}$, so the bias
+converges with a time constant of about $32$, $10$ and $3$\,s for
+$R_b = 10^{-3}R$, $10^{-2}R$ and $10^{-1}R$. We chose $R_b=10^{-2}R$,
+\[
+  L = \begin{bmatrix} 4.06 & 0\\ 0 & 3.72\\ -0.396 & 0\\ 0 & -0.362 \end{bmatrix}.
+\]
+In Fig.~\ref{fig:sim} the filter of Q4.1 keeps a constant error of
+$0.79^\circ$ $(= b_y/L_\theta)$, while the error of the augmented
+filter goes to zero as the bias converges (RMS of $0.07^\circ$ for
+$t\geq 20$\,s).
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{figs/4_4_sim_bias.pdf}
+\captionof{figure}{Simulation: gyro bias $b_y$ and its estimate $\hat b_y$ for three values of $R_b$.}
+\label{fig:sim-bias}
+\end{center}
+
+\paragraph{Experiments}
+In the experimental data the bias estimated at rest (Experiment A) is
+about $-0.1$\,deg/s in $y$ (the gyro mean of Q3.1 is $-0.085$\,deg/s)
+and below $0.03$\,deg/s in $x$. With such a small bias the angles of the
+two filters almost coincide (Figs.~\ref{fig:exp-pitch}
+and~\ref{fig:exp-roll}).
+\end{answer}
+
+% ------------------------------------------------------------ Q4.5 ---
+\begin{question}{4.5}{T}
+Check if the previous filters are complementary. Discuss the advantages and limitations of
+this class of filters.
+\end{question}
+
+\begin{answer}
+Two filters are complementary if their transfer functions add up to one.
+For the filter of Q4.1, from Eq.~\eqref{eq:q42_tf},
+\[
+  G_L(s) + G_H(s) = \frac{L_\theta}{s+L_\theta} + \frac{s}{s+L_\theta} = 1 .
+\]
+For the filter of Q4.4, eliminating $\hat b_y$,
+\[
+  \hat\theta(s) = \underbrace{\frac{L_1 s - L_2}{s^2+L_1 s-L_2}}_{G_L(s)}\,\theta_m(s)
+  + \frac{1}{s}\,\underbrace{\frac{s^2}{s^2+L_1 s-L_2}}_{G_H(s)}\,\omega_{y_m}(s),
+  \qquad G_L(s)+G_H(s) = 1 .
+\]
+Both are complementary (Fig.~\ref{fig:bode}). In the second one $G_H$ is
+of second order, so $\tfrac{1}{s}G_H(0)=0$ and a constant gyro bias is
+rejected.
+
+\begin{center}
+\includegraphics[width=0.7\linewidth]{figs/4_5_bode.pdf}
+\captionof{figure}{Magnitude of the complementary filters of Q4.1 and Q4.4 (pitch).}
+\label{fig:bode}
+\end{center}
+
+Advantages: if both sensors measure the same angle, $\theta_m=\theta$
+and $\omega_{y_m}=s\theta$, then $\hat\theta=\theta$ at all frequencies,
+so the filter introduces no lag or attenuation on the signal and only
+filters the noise; no model of the vehicle dynamics is needed; the
+implementation is one integrator and one gain per axis.
+
+Limitations: the errors of the two sensors have to be separated in
+frequency. The low-frequency errors of the inclinometer (accelerometer
+offset, linear accelerations) and the high-frequency noise of the gyro
+pass to the estimate. The gains are constant, so the trade-off chosen
+for one condition (hover) is kept in all the others.
+\end{answer}
+
+% ------------------------------------------------------------ Q4.6 ---
+\begin{question}{4.6}{L}
+Discuss the results obtained and relate them to the different conditions of operation specified in experiments A to E.
+\end{question}
+
+\begin{answer}
+Figs.~\ref{fig:exp-pitch} and~\ref{fig:exp-roll} show the two filters,
+the raw inclinometer and the onboard estimate, which is used as
+reference.
+
+\begin{center}
+\includegraphics[width=0.85\linewidth]{figs/4_6_pitch.pdf}
+\captionof{figure}{Pitch in Experiments A to E.}
+\label{fig:exp-pitch}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{A (at rest):} the estimate is the inclinometer without
+  the noise (standard deviation from $0.19^\circ$ to $0.07^\circ$ in
+  pitch). There is a constant difference to the onboard estimate
+  ($0.9^\circ$ in pitch, $2.0^\circ$ in roll), which comes from the
+  offset of the raw inclinometer seen in Q3.4.
+  \item \textbf{B (rotors on, on the ground):} the vibration increases
+  the inclinometer noise and also moves its mean (roll of $-3.5^\circ$
+  with the drone on the ground). The filter removes the high-frequency
+  part (standard deviation of the roll from $4.5^\circ$ to
+  $1.8^\circ$) but follows the low-frequency part, so this is the
+  experiment with the largest difference to the onboard estimate.
+  \item \textbf{C (hover):} the estimate follows the mean of the
+  inclinometer. Its standard deviation is only slightly lower
+  ($0.44^\circ$ to $0.38^\circ$ in pitch), so most of the variance
+  measured in hover is at low frequency, below $L$, and is not removed.
+  \item \textbf{D (pitch step):} the onboard pitch goes to about
+  $5.4^\circ$ in the first second of the step, while the inclinometer
+  takes about $3$\,s to get there. In flight the accelerometer measures
+  the specific force and not only gravity, so the inclinometer does not
+  give the tilt during the acceleration. The filter follows the gyro
+  only for $1/L_\theta\approx 0.3$\,s and then goes to the
+  inclinometer: its mean in the first second is $1.8^\circ$.
+  \item \textbf{E (waypoints in $y$):} the same happens in roll, where
+  the peaks of $9.8^\circ$ and $-6.4^\circ$ of the onboard estimate are
+  estimated as $5.3^\circ$ and $-3.3^\circ$.
+\end{itemize}
+
+The $Q$ and $R$ measured in hover describe the noise of the sensors but
+not the error of the inclinometer during manoeuvres. For D and E a
+lower gain is better, as shown in Fig.~\ref{fig:tuning}.
+
+The filter with bias gives almost the same angles in all experiments.
+Its bias estimate stays within $\pm0.2$\,deg/s in A and C, but reaches
+$\pm0.6$\,deg/s in $\hat b_y$ during the step of D, $\pm0.8$\,deg/s in
+$\hat b_x$ during the manoeuvres of E, and $-0.6$\,deg/s in $\hat b_x$
+in B: the difference between the gyro and the inclinometer in these
+conditions is taken as bias.
+\end{answer}
+
+% ------------------------------------------------------------ Q4.7 ---
+\begin{question}{4.7}{T+L}
+Repeat the previous questions for the roll estimation.
+\end{question}
+
+\begin{answer}
+No separate derivation is needed for roll, since the pitch and roll
+channels are decoupled and share the same structure. Every design, transfer
+function and result of Questions 4.1--4.6 was therefore obtained for
+both angles, using the following correspondence:
+\[
+  \theta \to \phi, \qquad
+  \omega_{y_m} \to \omega_{x_m}, \qquad
+  \theta_m \to \phi_m, \qquad
+  b_y \to b_x .
+\]
+The roll gains are $L_\phi = 3.96$\,rad/s (Q4.1) and
+$L_1 = 4.06$\,rad/s, $L_2 = -0.396$\,s$^{-2}$ (Q4.4), computed from the
+roll $R$ and $Q$ of Q4.1. The transfer functions of Q4.2 and Q4.5 are the
+same with these gains, and the conclusions on the effect of $Q$ and $R$
+(Q4.3) hold unchanged for roll. The results on Experiments A to E are in
+Fig.~\ref{fig:exp-roll} and are discussed together with the pitch in
+Q4.6.
+
+\begin{center}
+\includegraphics[width=0.85\linewidth]{figs/4_7_roll.pdf}
+\captionof{figure}{Roll in Experiments A to E.}
+\label{fig:exp-roll}
+\end{center}
+\end{answer}
+
+% =====================================================================
+\section{Integrated roll and pitch estimation}
+
+% -------------------------------------------------------------- Q5 ---
+\begin{question}{5}{L}
+Study and implement the solution proposed in P.~Batista, C.~Silvestre, and P.~Oliveira, ``Partial Attitude and Rate Gyro Bias Estimation: Observability Analysis, Filter Design, and Performance Evaluation,'' International Journal of Control, vol.~84, no.~5, pp.~895--903, May 2011. Note that you are only required to implement a Kalman filter for the nominal system (2) of the above-mentioned reference to partially estimate the attitude of the vehicle together with the bias of the three rate gyro components.
+\end{question}
+
+\begin{answer}
+We did not have access to the full text of the journal paper. The system
+below is the single vector observation system, also numbered (2), of the
+conference paper of the same authors ``Sensor-based Complementary
+Globally Asymptotically Stable Filters for Attitude Estimation'', which
+is openly available.
+
+\paragraph{Nominal system}
+Let $R$ be the rotation matrix from $\fB$ to $\fI$, with
+$\dot R = R\,S(\omega)$, where $S(\cdot)$ is the skew-symmetric matrix
+of the cross product. The direction of gravity in $\fB$,
+$x = R^Te_3$, is constant in $\fI$, so $\dot x = -S(\omega)x$. The rate
+gyro measures $\omega_m = \omega + b$ with constant bias $b$, and the
+accelerometer measures $-x$ (in g) when the linear acceleration is
+small. The nominal system is
+\[
+  \dot x = -S(\omega_m)\,x + S(b)\,x, \qquad \dot b = 0, \qquad y = x .
+\]
+It is nonlinear because of $S(b)x$, but since $S(b)x = -S(x)b$ and
+$x=y$ is measured, it can be written as
+\[
+  \begin{bmatrix}\dot x\\ \dot b\end{bmatrix} =
+  \underbrace{\begin{bmatrix} -S(\omega_m(t)) & -S(y(t))\\ 0 & 0 \end{bmatrix}}_{A(t)}
+  \begin{bmatrix} x\\ b\end{bmatrix},
+  \qquad
+  y = \underbrace{\begin{bmatrix} I_3 & 0 \end{bmatrix}}_{C}
+  \begin{bmatrix} x\\ b\end{bmatrix},
+\]
+a linear time-varying system, since $\omega_m(t)$ and $y(t)$ are known
+signals. There is no linearization and no small-angle approximation.
+Roll and pitch follow from
+$x = [-\sin\theta \quad \sin\phi\cos\theta \quad \cos\phi\cos\theta]^T$,
+\[
+  \hat\phi = \operatorname{atan2}(\hat x_2,\,\hat x_3), \qquad
+  \hat\theta = \operatorname{atan2}\!\big(-\hat x_1,\,\sqrt{\hat x_2^2+\hat x_3^2}\big),
+\]
+the inclinometer of Q3.4 applied to the filtered vector. The yaw angle
+is not estimated (partial attitude).
+
+\paragraph{Kalman filter}
+The gyro noise $w_\omega$ enters as $\omega_m = \omega + b + w_\omega$,
+so in $\dot x$ it appears as $-S(y)\,w_\omega$; as in Q4.4, a noise
+$w_b$ is added to $\dot b$. With $G(t) = \mathrm{diag}(-S(y),\, I_3)$,
+process noise $R = \mathrm{diag}(R_\omega,\, R_b)$ and measurement noise
+$Q$ (accelerometer), the filter is
+\[
+\begin{aligned}
+  &\dot{\hat{\mathbf{x}}} = A(t)\,\hat{\mathbf{x}} + L(t)\,(y - C\hat{\mathbf{x}}),
+  \qquad L(t) = P(t)\,C^TQ^{-1},\\
+  &\dot P = A(t)P + PA^T(t) + G(t)\,R\,G^T(t) - PC^TQ^{-1}CP, \qquad P(0)=P_0 ,
+\end{aligned}
+\]
+with $\hat{\mathbf{x}} = [\hat x^T \quad \hat b^T]^T$. It is the
+Riccati equation of Q4.1 without $\dot P = 0$: $A$ and $G$ change with
+the measurements, so the gain is not constant and $P$ is integrated
+together with the state.
+
+\paragraph{Observability}
+$x$ is measured, so the question is the bias. It acts on $x$ through
+$-S(y)b = b\times y$, which is zero for the component of $b$ parallel to
+$y$. For constant $\omega_m$ and $y$,
+\[
+  \mathrm{rank}\begin{bmatrix} C\\ CA \end{bmatrix}
+  = \mathrm{rank}\begin{bmatrix} I_3 & 0\\ -S(\omega_m) & -S(y) \end{bmatrix}
+  = 3 + \mathrm{rank}\,S(y) = 5 ,
+\]
+and the higher powers of $A$ add nothing. In the reference, the system is
+uniformly completely observable if and only if the direction of $y$ in
+$\fB$ keeps changing: there are $\delta,\alpha>0$ such that, for every
+$t$ and every unit vector $d$, $\|S(y(t^*))\,d\|\geq\alpha$ for some
+$t^*\in[t,\,t+\delta]$. In hover $y\approx e_3$, so $b_x$ and $b_y$ are
+observable and $b_z$ is not; a rotation in yaw does not change $y$ and
+does not help. $b_z$ is only corrected while the vehicle is tilted.
+
+\paragraph{Implementation}
+The filter is one MATLAB Function block that computes
+$\dot{\hat{\mathbf{x}}}$ and $\dot P$, followed by two integrators with
+initial conditions $\hat{\mathbf{x}}_0$ and $P_0$. The inputs are the
+rate gyro in rad/s and $y = -a/1000$, with $a$ the accelerometer in mg.
+$R_\omega$ and $Q$ are the variances measured in hover (Q3.3),
+\[
+  R_\omega = \mathrm{diag}(6.38,\ 7.63,\ 7.77)\times10^{-4}\ (\mathrm{rad/s})^2, \qquad
+  Q = \mathrm{diag}(5.91,\ 4.31,\ 5.68)\times10^{-5}\ \mathrm{g}^2,
+\]
+with $R_b = 10^{-4}R_\omega$,
+$\hat{\mathbf{x}}_0 = [0 \quad 0 \quad 1 \quad 0 \quad 0 \quad 0]^T$
+(level, no bias) and $P_0 = \mathrm{diag}(10^{-3}I_3,\ 0.05^2 I_3)$.
+Here $P_0$ already gives a gain to the bias, so $R_b$ can be much
+smaller than in Q4.4, where the steady-state bias gain was zero for
+$R_b=0$.
+
+\paragraph{Simulation}
+In \texttt{ARDroneHoverSim\_5} the gyro is computed from the Euler angles
+of the simulator and their derivatives,
+$\omega = W(\phi,\theta)\,[\dot\phi \quad \dot\theta \quad \dot\psi]^T$,
+plus noise of variance $R_\omega$ and a bias
+$b = [-1.72 \quad 2.86 \quad 2.29]^T$\,deg/s; the accelerometer is
+$x(\phi,\theta)$ plus noise of variance $Q$. Steps of 1\,m in $x$
+($t=10$\,s) and $y$ ($t=30$\,s) give pitch up to $17^\circ$ and roll up
+to $9^\circ$ (Fig.~\ref{fig:sim5}). $\hat b_x$ and $\hat b_y$ converge in
+about 5\,s; $\hat b_z$ stays at zero, with its initial standard deviation
+of $2.86$\,deg/s, until the step at 10\,s, and then moves only to
+$0.57$\,deg/s, with $\sigma_{b_z}=2.5$\,deg/s. The RMS error of the angles
+for $t\geq20$\,s is $0.06^\circ$, against $0.4^\circ$ for the
+inclinometer.
+
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\includegraphics[width=0.68\linewidth]{figs/5_sim.pdf}
+\captionof{figure}{Simulation with gyro bias in the three axes: angle error (top), bias and estimate (bottom).}
+\label{fig:sim5}
+\end{minipage}
+\end{center}
+
+\paragraph{Experiments}
+Fig.~\ref{fig:exp5} compares the filter with the inclinometer, the
+onboard estimate and the filter of Q4.4, with the measured $Q$ and with
+$100\,Q$ (as in Q4.3). Table~\ref{tab:rms5} gives the RMS difference to
+the onboard estimate in the \texttt{winStats} windows of Section 3.
+
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\includegraphics[width=0.8\linewidth]{figs/5_angles.pdf}
+\captionof{figure}{Pitch in Experiments A, C and D and roll in Experiment E.}
+\label{fig:exp5}
+\end{minipage}
+\end{center}
+
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\small
+\begin{tabular}{@{}l|rrrr|rrrr@{}}
+\toprule
+ & \multicolumn{4}{c|}{roll [deg]} & \multicolumn{4}{c}{pitch [deg]}\\
+Exp. & incl. & KF 4.4 & KF 5 & KF 5 ($100Q$) & incl. & KF 4.4 & KF 5 & KF 5 ($100Q$)\\
+\midrule
+A & 2.02 & 2.03 & 2.03 & 2.29 & 0.96 & 0.95 & 0.95 & 0.99\\
+B & 5.66 & 3.93 & 4.00 & 5.00 & 2.55 & 2.41 & 2.43 & 2.89\\
+C & 2.46 & 2.42 & 2.42 & 2.66 & 0.65 & 0.54 & 0.55 & 0.67\\
+D & 1.95 & 1.84 & 1.85 & 2.06 & 2.50 & 2.02 & 2.00 & 1.29\\
+E & 2.72 & 1.92 & 1.91 & 0.46 & 2.16 & 2.15 & 2.15 & 2.35\\
+\bottomrule
+\end{tabular}
+\captionof{table}{RMS difference to the onboard estimate.}
+\label{tab:rms5}
+\end{minipage}
+\end{center}
+
+With the measured $Q$ the angles are almost the same as those of Q4.4:
+for small angles $x\approx[-\theta \quad \phi \quad 1]^T$ and
+$-S(\omega_m)x\approx[-q \quad p \quad 0]^T$, so the first two components
+reduce to the two filters of Q4.4. The constant roll offset of about
+$2^\circ$ (A, C) is the inclinometer offset of Q3.4. With $100\,Q$ the
+filter follows the onboard roll in E (RMS from $1.91^\circ$ to
+$0.46^\circ$) and the start of the pitch step in D ($\hat\theta$ passes
+$4^\circ$ at 10.4\,s, the onboard at 10.3\,s, the filter with $Q$ only at
+12.7\,s). After the step, however, $\hat\theta$ is up to $2.6^\circ$
+below the onboard value: with a lower gain the errors of the integrated
+gyro take longer, $1/L$, to be corrected.
+
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\includegraphics[width=0.72\linewidth]{figs/5_bias.pdf}
+\captionof{figure}{Bias estimate of the three rate gyros (measured $Q$).}
+\label{fig:bias5}
+\end{minipage}
+\end{center}
+
+At rest (A) $\hat b$ converges in about 5\,s to
+$[0.044 \quad -0.093 \quad -0.017]$\,deg/s, close to the mean of the
+gyro in Q3.1, $[0.048 \quad -0.085 \quad 0.003]$\,deg/s
+(Fig.~\ref{fig:bias5}). $\sigma_{b_x}$ and $\sigma_{b_y}$ fall to about
+$0.3$\,deg/s in all the experiments, while $\sigma_{b_z}$ stays at
+$2.8$\,deg/s, the initial value, in A, C, D and E: the vehicle is never
+tilted enough for $b_z$ to be observable. $\hat b_z$ only moves during
+the manoeuvres of D and E (up to $0.5$\,deg/s), and there the change
+comes from the linear acceleration, which the model takes as a rotation
+of $y$, and not from the bias. In the same manoeuvres $\hat b_x$ and
+$\hat b_y$ reach $0.8$\,deg/s, as in Q4.4.
+\end{answer}
+
+\end{document}

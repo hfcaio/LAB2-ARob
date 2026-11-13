@@ -159,94 +159,56 @@
 \end{question}
 
 \begin{answer}
-In Experiment A, the drone was kept stationary on the ground
-with its motors switched off. The accelerometer and gyroscope
-measurements were analyzed to characterize the sensor disturbances.
+In Experiment A the drone is at rest on the table with the motors off.
 Only the interval $10$--$24$\,s was used, since the table was touched
-before and after it. The accelerometer is given in mg and the rate gyro
-in deg/s.
-
-The sample mean was computed as
+before and after it ($N=2801$ samples). The accelerometer is given in mg
+and the rate gyro in deg/s. For each sensor, with samples
+$\mathbf{x}_k\in\R^3$,
 \[
-\boldsymbol{\mu} =
-\frac{1}{N}\sum_{k=1}^{N}\mathbf{x}_k,
+  \boldsymbol{\mu} = \frac{1}{N}\sum_{k=1}^{N}\mathbf{x}_k, \qquad
+  \boldsymbol{\Sigma} = \frac{1}{N-1}\sum_{k=1}^{N}
+  (\mathbf{x}_k-\boldsymbol{\mu})(\mathbf{x}_k-\boldsymbol{\mu})^T,
 \]
-and the sample covariance matrix was calculated as
-\[
-\boldsymbol{\Sigma} =
-\frac{1}{N-1}
-\sum_{k=1}^{N}
-(\mathbf{x}_k-\boldsymbol{\mu})
-(\mathbf{x}_k-\boldsymbol{\mu})^T.
-\]
+and the standard deviations are $\boldsymbol{\sigma}=\sqrt{\mathrm{diag}(\boldsymbol{\Sigma})}$.
 
 \paragraph{Accelerometer}
-The estimated mean accelerometer measurement is
 \[
 \boldsymbol{\mu}_{a,A} =
-\begin{bmatrix}
-12.0\\
--37.8\\
--1011.1
-\end{bmatrix}.
-\]
-The corresponding covariance matrix is
-\[
+\begin{bmatrix} 12.0\\ -37.8\\ -1011.1 \end{bmatrix}\mathrm{mg},
+\qquad
 \boldsymbol{\Sigma}_{a,A} =
 \begin{bmatrix}
 11.59 & -0.57 & -0.28\\
 -0.57 & 0.93 & 0.61\\
 -0.28 & 0.61 & 10.79
-\end{bmatrix}.
-\]
-The standard deviations are
-\[
+\end{bmatrix}\mathrm{mg}^2,
+\qquad
 \boldsymbol{\sigma}_{a,A} =
-\begin{bmatrix}
-3.4044 & 0.9634 & 3.2851
-\end{bmatrix}.
+\begin{bmatrix} 3.40\\ 0.96\\ 3.29 \end{bmatrix}\mathrm{mg}.
 \]
-The acceleration magnitude was approximately \(1011.9\)
-units. Since the drone was stationary, this measurement is
-mainly associated with gravity. The magnitude suggests a
-scale of approximately \(1000\) units per \(g\), although
-the exact measurement units were not specified in the
-signal metadata.
+The norm of the mean is $1011.9$\,mg: at rest the accelerometer
+measures only gravity, $-g$ along $z$. The small $x$ and $y$ components
+come from the tilt of the table and from sensor offsets.
 
-\paragraph{Gyroscope}
-The estimated mean gyroscope measurement is
+\paragraph{Rate gyro}
 \[
 \boldsymbol{\mu}_{g,A} =
-\begin{bmatrix}
-0.0484\\
--0.0848\\
-0.0028
-\end{bmatrix}.
-\]
-The covariance matrix is
-\[
+\begin{bmatrix} 0.048\\ -0.085\\ 0.003 \end{bmatrix}\mathrm{deg/s},
+\quad
 \boldsymbol{\Sigma}_{g,A} =
 \begin{bmatrix}
-0.0018 & 0 & -0.0001\\
-0 & 0.0018 & 0.0001\\
--0.0001 & 0.0001 & 0.0016
-\end{bmatrix}.
-\]
-The standard deviations are
-\[
+1.76 & 0.02 & -0.09\\
+0.02 & 1.77 & 0.10\\
+-0.09 & 0.10 & 1.63
+\end{bmatrix}\times10^{-3}\,(\mathrm{deg/s})^2,
+\quad
 \boldsymbol{\sigma}_{g,A} =
-\begin{bmatrix}
-0.0419 & 0.0421 & 0.0404
-\end{bmatrix}.
+\begin{bmatrix} 0.042\\ 0.042\\ 0.040 \end{bmatrix}\mathrm{deg/s}.
 \]
-Ideally, the gyroscope measurements should be zero when
-the drone is stationary. The small non-zero mean values
-indicate possible sensor bias, while the covariance matrix
-describes the measurement variability and noise.
-
-Overall, Experiment A provides a baseline characterization
-of the sensor disturbances in the absence of motor-induced
-vibrations.
+The vehicle does not rotate, so the mean is the gyro bias, below
+$0.1$\,deg/s in the three axes. In both sensors the covariance is almost
+diagonal: the noise of the three axes is uncorrelated. These values are
+the intrinsic sensor noise, without disturbances from the motors.
 \end{answer}
 
 % ------------------------------------------------------------ Q3.2 ---
@@ -255,83 +217,52 @@ vibrations.
 \end{question}
 
 \begin{answer}
-The mean and covariance of the accelerometer and gyroscope measurements were calculated using the data collected in Experiment B, in the interval $10$--$33$\,s (after the rotor spin-up). The sample mean is given by
-\[
-\boldsymbol{\mu}=\frac{1}{N}\sum_{k=1}^{N}\mathbf{x}_k
-\]
-and the sample covariance matrix is
-\[
-\boldsymbol{\Sigma}=
-\frac{1}{N-1}\sum_{k=1}^{N}
-(\mathbf{x}_k-\boldsymbol{\mu})
-(\mathbf{x}_k-\boldsymbol{\mu})^T.
-\]
+Same computation as in Q3.1, in the interval $10$--$33$\,s, after the
+rotors spin up ($N=4601$).
 
 \paragraph{Accelerometer}
-The mean accelerometer measurement is
 \[
-\boldsymbol{\mu}_{a,B}=
-\begin{bmatrix}
-47.7\\
-61.9\\
--1006.8
-\end{bmatrix}.
-\]
-The covariance matrix is
-\[
-\boldsymbol{\Sigma}_{a,B}=
+\boldsymbol{\mu}_{a,B} =
+\begin{bmatrix} 47.7\\ 61.9\\ -1006.8 \end{bmatrix}\mathrm{mg},
+\qquad
+\boldsymbol{\Sigma}_{a,B} =
 \begin{bmatrix}
 297 & 249 & -26\\
 249 & 6287 & 289\\
 -26 & 289 & 305
-\end{bmatrix}.
+\end{bmatrix}\mathrm{mg}^2,
+\qquad
+\boldsymbol{\sigma}_{a,B} =
+\begin{bmatrix} 17.2\\ 79.3\\ 17.5 \end{bmatrix}\mathrm{mg}.
 \]
-The corresponding standard deviations are
+
+\paragraph{Rate gyro}
 \[
-\boldsymbol{\sigma}_{a,B}=
+\boldsymbol{\mu}_{g,B} =
+\begin{bmatrix} -0.14\\ 0.21\\ -0.39 \end{bmatrix}\mathrm{deg/s},
+\qquad
+\boldsymbol{\Sigma}_{g,B} =
 \begin{bmatrix}
-17.2241\\
-79.2897\\
-17.4548
-\end{bmatrix}.
+27.0 & 6.5 & 21.9\\
+6.5 & 10.5 & 11.3\\
+21.9 & 11.3 & 34.8
+\end{bmatrix}(\mathrm{deg/s})^2,
+\qquad
+\boldsymbol{\sigma}_{g,B} =
+\begin{bmatrix} 5.20\\ 3.24\\ 5.90 \end{bmatrix}\mathrm{deg/s}.
 \]
 
-\paragraph{Gyroscope}
-The mean gyroscope measurement is
-\[
-\boldsymbol{\mu}_{g,B}=
-\begin{bmatrix}
--0.1380\\
-0.2072\\
--0.3888
-\end{bmatrix}.
-\]
-The covariance matrix is
-\[
-\boldsymbol{\Sigma}_{g,B}=
-\begin{bmatrix}
-27.0420 & 6.4765 & 21.9402\\
-6.4765 & 10.4781 & 11.2626\\
-21.9402 & 11.2626 & 34.8483
-\end{bmatrix}.
-\]
-The corresponding standard deviations are
-\[
-\boldsymbol{\sigma}_{g,B}=
-\begin{bmatrix}
-5.2002\\
-3.2370\\
-5.9032
-\end{bmatrix}.
-\]
-
-Compared with Experiment A, the uncertainty in the measurements increases considerably when the motors are running. This is particularly evident in the accelerometer \(y\)-axis and in all three gyroscope axes. The accelerometer standard deviation along the \(y\)-axis increases from approximately \(0.96\) to \(79.29\), while the gyroscope standard deviations also increase substantially.
-
-The main additional disturbance source is the mechanical vibration generated by the motors and propellers. These vibrations are transmitted through the drone frame to the IMU, affecting both the accelerometer and gyroscope measurements. Motor rotation and propeller imbalance may also introduce periodic disturbances.
-
-The increase is not the same in every direction: the accelerometer standard deviation grows by a factor of about \(5\) along \(x\) and \(z\) and by a factor of about \(80\) along \(y\).
-
-Overall, Experiment B demonstrates that operating the motors introduces significant additional disturbances. The calculated covariance matrices represent the total measurement variability, including sensor noise and motor-induced vibrations, rather than the intrinsic sensor noise alone.
+With the rotors on, the standard deviation of the accelerometer grows by
+a factor of about 5 in $x$ and $z$ and 80 in $y$, and that of the gyro by
+a factor of 80 to 150. The new disturbance is the vibration of the
+motors and propellers (unbalance, blade passing), transmitted through the
+frame to the sensor board. It is not the same in every direction, and
+the gyro axes are now correlated (the off-diagonal terms are of the order
+of the variances), which is expected from a mechanical excitation common
+to the three axes. The mean also changes: $a_y$ goes from $-37.8$ to
+$+61.9$\,mg, which moves the roll of the inclinometer from $2.1^\circ$
+to $-3.5^\circ$ (Q3.4) with the drone on the ground. These covariances
+describe the vibration, not the noise of the sensors.
 \end{answer}
 
 % ------------------------------------------------------------ Q3.3 ---
@@ -340,85 +271,52 @@ Overall, Experiment B demonstrates that operating the motors introduces signific
 \end{question}
 
 \begin{answer}
-The mean and covariance of the accelerometer and gyroscope measurements were calculated using the data collected in Experiment C, in the interval $9$--$30$\,s, where the drone is hovering (take-off and landing excluded).
-
-The sample mean is calculated as
-\[
-\boldsymbol{\mu}=\frac{1}{N}\sum_{k=1}^{N}\mathbf{x}_k
-\]
-and the sample covariance matrix is
-\[
-\boldsymbol{\Sigma}=
-\frac{1}{N-1}\sum_{k=1}^{N}
-(\mathbf{x}_k-\boldsymbol{\mu})
-(\mathbf{x}_k-\boldsymbol{\mu})^T.
-\]
+Same computation, in the interval $9$--$30$\,s, with the drone in hover
+(take-off and landing excluded, $N=4201$).
 
 \paragraph{Accelerometer}
-The mean accelerometer measurement is
 \[
-\boldsymbol{\mu}_{a,C}=
-\begin{bmatrix}
-8.0\\
--42.7\\
--1008.6
-\end{bmatrix}.
-\]
-The covariance matrix is
-\[
-\boldsymbol{\Sigma}_{a,C}=
+\boldsymbol{\mu}_{a,C} =
+\begin{bmatrix} 8.0\\ -42.7\\ -1008.6 \end{bmatrix}\mathrm{mg},
+\qquad
+\boldsymbol{\Sigma}_{a,C} =
 \begin{bmatrix}
 59.1 & 28.3 & 20.8\\
 28.3 & 43.1 & 19.5\\
 20.8 & 19.5 & 56.8
-\end{bmatrix}.
+\end{bmatrix}\mathrm{mg}^2,
+\qquad
+\boldsymbol{\sigma}_{a,C} =
+\begin{bmatrix} 7.69\\ 6.57\\ 7.53 \end{bmatrix}\mathrm{mg}.
 \]
-The corresponding standard deviations are
+
+\paragraph{Rate gyro}
 \[
-\boldsymbol{\sigma}_{a,C}=
+\boldsymbol{\mu}_{g,C} =
+\begin{bmatrix} -0.065\\ 0.040\\ -0.020 \end{bmatrix}\mathrm{deg/s},
+\qquad
+\boldsymbol{\Sigma}_{g,C} =
 \begin{bmatrix}
-7.6897\\
-6.5676\\
-7.5346
-\end{bmatrix}.
+2.09 & -0.38 & -0.43\\
+-0.38 & 2.51 & 0.23\\
+-0.43 & 0.23 & 2.55
+\end{bmatrix}(\mathrm{deg/s})^2,
+\qquad
+\boldsymbol{\sigma}_{g,C} =
+\begin{bmatrix} 1.45\\ 1.58\\ 1.60 \end{bmatrix}\mathrm{deg/s}.
 \]
 
-\paragraph{Gyroscope}
-The mean gyroscope measurement is
-\[
-\boldsymbol{\mu}_{g,C}=
-\begin{bmatrix}
--0.0654\\
-0.0396\\
--0.0203
-\end{bmatrix}.
-\]
-The covariance matrix is
-\[
-\boldsymbol{\Sigma}_{g,C}=
-\begin{bmatrix}
-2.0934 & -0.3778 & -0.4270\\
--0.3778 & 2.5058 & 0.2251\\
--0.4270 & 0.2251 & 2.5508
-\end{bmatrix}.
-\]
-The corresponding standard deviations are
-\[
-\boldsymbol{\sigma}_{g,C}=
-\begin{bmatrix}
-1.4469\\
-1.5830\\
-1.5971
-\end{bmatrix}.
-\]
-
-Compared with Experiment A, the measurements in Experiment C show considerably higher variability. The accelerometer standard deviations increase in all three axes, to approximately \(7\) in each of them. The gyroscope standard deviations also increase significantly, from about \(0.04\) to about \(1.5\).
-
-In addition to motor and propeller vibrations, several disturbance sources are present during hovering flight. These include small attitude variations, translational movements, altitude corrections, and continuous control actions performed by the flight controller to maintain the hovering position. External disturbances, such as air currents, may also affect the drone.
-
-The accelerometer measures both gravitational acceleration and the drone's actual linear acceleration. Consequently, during flight, its measurements do not represent gravity alone. This contributes to the increased variability observed in the accelerometer data.
-
-The covariance matrices therefore describe the combined effects of sensor noise, mechanical vibrations, and actual drone motion. They should not be interpreted as measurements of intrinsic sensor noise alone.
+Compared with A, the standard deviation is 2 to 7 times larger in the
+accelerometer and 35 to 40 times larger in the gyro, but lower than in
+B, probably because the vehicle is no longer pressed against the ground
+and the frame vibrates less. In hover there are new sources: the
+vehicle really rotates and moves, since the onboard controller keeps
+correcting the attitude and the position, and there are air currents. The gyro measures these rotations, and the
+accelerometer measures the specific force, which includes the linear
+acceleration and not only gravity. Part of $\boldsymbol{\Sigma}$ is
+therefore real motion of the vehicle and not sensor noise. These are the
+values used for $Q$ and $R$ in Section 4, as they describe the conditions
+in which the filters are used.
 \end{answer}
 
 % ------------------------------------------------------------ Q3.4 ---
@@ -427,58 +325,42 @@ The covariance matrices therefore describe the combined effects of sensor noise,
 \end{question}
 
 \begin{answer}
-\paragraph{Computation of pitch and roll from accelerometer measurements}
-The pitch and roll angles can be estimated from the accelerometer measurements by assuming that the measured acceleration is mainly due to gravity.
-
-Since the accelerometer \(z\)-axis measurement is negative when the drone is at rest, the following expressions are used:
+If the accelerometer measures only gravity, $\mathbf{a} = -g\,R^Te_3 =
+-g[-\sin\theta \quad \sin\phi\cos\theta \quad \cos\phi\cos\theta]^T$, so
 \[
-\theta_{\mathrm{raw}} =
-\operatorname{atan2}
-\left(
-a_x,\sqrt{a_y^2+a_z^2}
-\right)
+  \phi_m = \operatorname{atan2}(-a_y,\,-a_z), \qquad
+  \theta_m = \operatorname{atan2}\!\big(a_x,\,\sqrt{a_y^2+a_z^2}\big).
 \]
-\[
-\phi_{\mathrm{raw}} =
-\operatorname{atan2}(-a_y,-a_z)
-\]
-where \(a_x\), \(a_y\), and \(a_z\) are the accelerometer measurements. The resulting angles are converted from radians to degrees:
-\[
-\theta_{\mathrm{deg}}=
-\theta_{\mathrm{raw}}\frac{180}{\pi}
-\]
-\[
-\phi_{\mathrm{deg}}=
-\phi_{\mathrm{raw}}\frac{180}{\pi}.
-\]
-
-The following MATLAB code was used to calculate the angles for each experiment:
+The minus signs follow from $a_z<0$ at rest, and the signs were
+confirmed against the onboard estimate in the part of Experiment E where
+the drone is moved by hand.
 
 \begin{lstlisting}
 % acc: accelerometer samples of one experiment, inside its time window
-pitch = rad2deg(atan2( acc(:,1), sqrt(acc(:,2).^2 + acc(:,3).^2)));
-roll  = rad2deg(atan2(-acc(:,2), -acc(:,3)));
-
-mean_pitch = mean(pitch);   std_pitch = std(pitch);
-mean_roll  = mean(roll);    std_roll  = std(roll);
+roll  = atan2d(-acc(:,2), -acc(:,3));
+pitch = atan2d( acc(:,1), sqrt(acc(:,2).^2 + acc(:,3).^2));
 \end{lstlisting}
-
-\paragraph{Results}
-The calculated mean and standard deviation of the raw pitch and roll angles are summarized below.
 
 \begin{center}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
-Experiment & Mean Pitch (deg) & Std.\ Pitch (deg) & Mean Roll (deg) & Std.\ Roll (deg) \\
+Experiment & mean $\phi_m$ [deg] & std $\phi_m$ [deg] & mean $\theta_m$ [deg] & std $\theta_m$ [deg] \\
 \midrule
-A & $0.6790$ & $0.1927$ & $2.1390$  & $0.0536$ \\
-B & $2.6975$ & $0.9647$ & $-3.5057$ & $4.4671$ \\
-C & $0.4535$ & $0.4367$ & $2.4243$  & $0.3650$ \\
+A & $2.14$  & $0.05$ & $0.68$ & $0.19$ \\
+B & $-3.51$ & $4.47$ & $2.70$ & $0.96$ \\
+C & $2.42$  & $0.37$ & $0.45$ & $0.44$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The same time intervals of Questions 3.1--3.3 were used. At rest (A) the raw angles are almost constant, and their mean is not zero ($2.1^\circ$ in roll), while the onboard estimate reads $0.1^\circ$ in the same interval, so this is an offset of the raw measurement and not noise. With the rotors on (B) the vibration goes directly into the angles, and the roll reaches a standard deviation of $4.5^\circ$ with the drone on the ground. In hover (C) the standard deviation is about $0.4^\circ$ in both angles; these are the values used as measurement noise in Section 4.
+The same time intervals of Q3.1--Q3.3 were used. At rest (A) the raw
+angles are almost constant, and their mean is not zero ($2.1^\circ$ in
+roll), while the onboard estimate reads $0.1^\circ$ in the same interval,
+so this is an offset of the raw measurement and not noise. With the
+rotors on (B) the vibration goes directly into the angles, and the roll
+reaches a standard deviation of $4.5^\circ$ with the drone on the
+ground. In hover (C) the standard deviation is about $0.4^\circ$ in both
+angles; these are the values used as measurement noise in Section 4.
 \end{answer}
 
 % =====================================================================
