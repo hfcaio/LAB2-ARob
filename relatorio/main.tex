@@ -159,9 +159,11 @@
 \end{question}
 
 \begin{answer}
-In Experiment A the drone is at rest on the table with the motors off.
-Only the interval $10$--$24$\,s was used, since the table was touched
-before and after it ($N=2801$ samples). The accelerometer is given in mg
+In Experiment A the drone is at rest on the ground with the motors off.
+Only the interval $10$--$24$\,s was used ($N=2801$ samples): the first
+samples of the log have the accelerometer at zero, and in $0$--$10$\,s and
+$25$--$30$\,s the drone was disturbed (the standard deviation of $a_x$ and
+$a_y$ doubles and the onboard angles change). The accelerometer is given in mg
 and the rate gyro in deg/s. For each sensor, with samples
 $\mathbf{x}_k\in\R^3$,
 \[
@@ -188,7 +190,7 @@ and the standard deviations are $\boldsymbol{\sigma}=\sqrt{\mathrm{diag}(\boldsy
 \]
 The norm of the mean is $1011.9$\,mg: at rest the accelerometer
 measures only gravity, $-g$ along $z$. The small $x$ and $y$ components
-come from the tilt of the table and from sensor offsets.
+come from the tilt of the ground and from sensor offsets.
 
 \paragraph{Rate gyro}
 \[
@@ -218,7 +220,8 @@ the intrinsic sensor noise, without disturbances from the motors.
 
 \begin{answer}
 Same computation as in Q3.1, in the interval $10$--$33$\,s, after the
-rotors spin up ($N=4601$).
+rotors spin up and the drone settles ($N=4601$); before $10$\,s the drone
+is tilted while it is pressed down (onboard roll of about $-3^\circ$).
 
 \paragraph{Accelerometer}
 \[
@@ -252,17 +255,16 @@ rotors spin up ($N=4601$).
 \begin{bmatrix} 5.20\\ 3.24\\ 5.90 \end{bmatrix}\mathrm{deg/s}.
 \]
 
-With the rotors on, the standard deviation of the accelerometer grows by
-a factor of about 5 in $x$ and $z$ and 80 in $y$, and that of the gyro by
-a factor of 80 to 150. The new disturbance is the vibration of the
-motors and propellers (unbalance, blade passing), transmitted through the
-frame to the sensor board. It is not the same in every direction, and
-the gyro axes are now correlated (the off-diagonal terms are of the order
-of the variances), which is expected from a mechanical excitation common
-to the three axes. The mean also changes: $a_y$ goes from $-37.8$ to
-$+61.9$\,mg, which moves the roll of the inclinometer from $2.1^\circ$
-to $-3.5^\circ$ (Q3.4) with the drone on the ground. These covariances
-describe the vibration, not the noise of the sensors.
+With the rotors on, $\boldsymbol{\sigma}_a$ grows by a factor of about 5
+in $x$ and $z$ and 80 in $y$, and $\boldsymbol{\sigma}_g$ by 80 to 150.
+The new disturbance is the vibration of the motors and propellers
+(unbalance, blade passing), transmitted through the frame to the sensor
+board. It is not the same in every direction, and the gyro axes are now
+correlated (off-diagonal terms of the order of the variances), as
+expected from a mechanical excitation common to the three axes. The mean
+of $a_y$ also moves from $-37.8$ to $+61.9$\,mg, so the inclinometer
+roll goes from $2.1^\circ$ to $-3.5^\circ$ (Q3.4) with the drone on the
+ground. These covariances describe the vibration, not the sensor noise.
 \end{answer}
 
 % ------------------------------------------------------------ Q3.3 ---
@@ -272,7 +274,8 @@ describe the vibration, not the noise of the sensors.
 
 \begin{answer}
 Same computation, in the interval $9$--$30$\,s, with the drone in hover
-(take-off and landing excluded, $N=4201$).
+(take-off and landing excluded, $N=4201$). The whole flight is compared
+at the end.
 
 \paragraph{Accelerometer}
 \[
@@ -306,17 +309,34 @@ Same computation, in the interval $9$--$30$\,s, with the drone in hover
 \begin{bmatrix} 1.45\\ 1.58\\ 1.60 \end{bmatrix}\mathrm{deg/s}.
 \]
 
-Compared with A, the standard deviation is 2 to 7 times larger in the
-accelerometer and 35 to 40 times larger in the gyro, but lower than in
-B, probably because the vehicle is no longer pressed against the ground
-and the frame vibrates less. In hover there are new sources: the
-vehicle really rotates and moves, since the onboard controller keeps
-correcting the attitude and the position, and there are air currents. The gyro measures these rotations, and the
-accelerometer measures the specific force, which includes the linear
-acceleration and not only gravity. Part of $\boldsymbol{\Sigma}$ is
-therefore real motion of the vehicle and not sensor noise. These are the
-values used for $Q$ and $R$ in Section 4, as they describe the conditions
-in which the filters are used.
+Compared with A, $\boldsymbol{\sigma}_a$ is 2 to 7 times larger and
+$\boldsymbol{\sigma}_g$ 35 to 40 times larger, but both are lower than in
+B, probably because the vehicle is no longer pressed against the ground.
+In hover there are new sources: the vehicle really rotates and moves,
+since the onboard controller keeps correcting the attitude and the
+position, and there are air currents. The gyro measures these rotations,
+and the accelerometer measures the specific force, which includes the
+linear acceleration. Part of $\boldsymbol{\Sigma}$ is therefore real
+motion and not sensor noise. These values are used for $Q$ and $R$ in
+Section 4, as they describe the conditions in which the filters work.
+
+\paragraph{Whole flight}
+Including the take-off and the landing ($0$--$33$\,s, $N=6601$):
+\begin{center}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Experiment C & $\boldsymbol{\sigma}_a$ [mg] & $\boldsymbol{\sigma}_g$ [deg/s] & std $\phi_m$, $\theta_m$ [deg] \\
+\midrule
+hover ($9$--$30$\,s)        & $(7.7,\ 6.6,\ 7.5)$   & $(1.45,\ 1.58,\ 1.60)$ & $0.37,\ 0.44$ \\
+whole flight ($0$--$33$\,s) & $(27.5,\ 12.1,\ 92.8)$ & $(3.64,\ 4.40,\ 2.20)$ & $3.90,\ 1.66$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+The take-off gives large vertical accelerations ($\sigma_{a_z}=68$\,mg
+up to $32.5$\,s), and the touchdown at $32.7$\,s is a single spike of
+the specific force ($\phi_m$ reaches $-144^\circ$) that alone takes the
+standard deviation of $\phi_m$ from $0.47^\circ$ to $3.90^\circ$. These
+short events are not sensor noise, so they were left out of $Q$ and $R$.
 \end{answer}
 
 % ------------------------------------------------------------ Q3.4 ---
@@ -333,13 +353,8 @@ If the accelerometer measures only gravity, $\mathbf{a} = -g\,R^Te_3 =
 \]
 The minus signs follow from $a_z<0$ at rest, and the signs were
 confirmed against the onboard estimate in the part of Experiment E where
-the drone is moved by hand.
-
-\begin{lstlisting}
-% acc: accelerometer samples of one experiment, inside its time window
-roll  = atan2d(-acc(:,2), -acc(:,3));
-pitch = atan2d( acc(:,1), sqrt(acc(:,2).^2 + acc(:,3).^2));
-\end{lstlisting}
+the drone is moved by hand. In MATLAB, \texttt{atan2d} gives the angles
+directly in degrees.
 
 \begin{center}
 \begin{tabular}{@{}lrrrr@{}}
@@ -349,6 +364,7 @@ Experiment & mean $\phi_m$ [deg] & std $\phi_m$ [deg] & mean $\theta_m$ [deg] & 
 A & $2.14$  & $0.05$ & $0.68$ & $0.19$ \\
 B & $-3.51$ & $4.47$ & $2.70$ & $0.96$ \\
 C & $2.42$  & $0.37$ & $0.45$ & $0.44$ \\
+C, whole flight & $2.28$ & $3.90$ & $0.46$ & $1.66$ \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -413,8 +429,8 @@ $B = C = I_2$, which gives the filter implemented
 \end{aligned}
 \]
 with the noise covariances
-$R = \mathrm{diag}(w_\phi,\, w_\theta)$ (gyro, process noise) and
-$Q = \mathrm{diag}(v_\phi,\, v_\theta)$ (inclinometer, measurement noise).
+$R = \mathrm{diag}(\sigma^2_{w_\phi},\, \sigma^2_{w_\theta})$ (gyro, process noise) and
+$Q = \mathrm{diag}(\sigma^2_{v_\phi},\, \sigma^2_{v_\theta})$ (inclinometer, measurement noise).
 The gain $L$ is constant and was computed with the \texttt{kalman()}
 command from $R$ and $Q$ (steady-state solution of the Riccati equation),
 \[
@@ -427,32 +443,31 @@ $P^2/Q = R$, so
 \]
 
 $R$ and $Q$ are the variances measured in hover (Experiment C, Questions
-3.3 and 3.4), converted to rad/s and rad:
+3.3 and 3.4), since hover is the condition closest to the use of the
+filter in flight, converted to rad/s and rad:
 \[
   R = \mathrm{diag}(6.38,\ 7.63)\times10^{-4}\ (\mathrm{rad/s})^2, \qquad
   Q = \mathrm{diag}(4.06,\ 5.81)\times10^{-5}\ \mathrm{rad}^2,
 \]
 \[
-  L = \mathrm{diag}(L_\phi,\ L_\theta) = \mathrm{diag}(3.96,\ 3.62)\ \mathrm{rad/s}.
+  L_\theta = \sqrt{\frac{7.63\times10^{-4}}{5.81\times10^{-5}}} = \sqrt{13.1} = 3.62\ \mathrm{s}^{-1},
+  \qquad
+  L_\phi = \sqrt{\frac{6.38\times10^{-4}}{4.06\times10^{-5}}} = \sqrt{15.7} = 3.96\ \mathrm{s}^{-1},
 \]
-
-The filter is implemented in Simulink as a MATLAB Function block that
-computes $\dot{\hat{x}}$, followed by an integrator. The inclinometer
-readings come from the accelerometer,
-\[
-  \phi_m = \operatorname{atan2}(-a_y,\,-a_z), \qquad
-  \theta_m = \operatorname{atan2}\!\big(a_x,\,\sqrt{a_y^2+a_z^2}\big).
-\]
+which is the same $L = \mathrm{diag}(3.96,\ 3.62)$ returned by
+\texttt{kalman()}. The filter is implemented in Simulink as a MATLAB
+Function block that computes $\dot{\hat{x}}$, followed by an integrator;
+$\phi_m$ and $\theta_m$ come from the accelerometer as in Q3.4.
 
 \paragraph{Simulation}
-In \texttt{ARDroneHoverSim} the rate gyro is simulated by differentiating
-the roll and pitch angles of the model and adding zero-mean Gaussian
-noise of variance $R$; the inclinometer is the angle plus zero-mean
-Gaussian noise of variance $Q$. A step of 1\,m in the $x$ reference at
-$t=10$\,s excites the pitch (Fig.~\ref{fig:sim}, which already includes
-the gyro bias and the filter of Question 4.4). Without bias, the RMS
-error of the pitch goes from $0.43^\circ$ (inclinometer) to
-$0.06^\circ$ (filter), with no visible lag during the manoeuvre.
+In \texttt{ARDroneHoverSim\_4\_1} the rate gyro is simulated by
+differentiating the roll and pitch angles of the model and adding
+zero-mean Gaussian noise of variance $R$; the inclinometer is the angle
+plus zero-mean Gaussian noise of variance $Q$. A step of 1\,m in the $x$
+reference at $t=10$\,s excites the pitch (Fig.~\ref{fig:sim}). With the
+RMS error $\sqrt{\tfrac{1}{N}\sum_k(\hat\theta_k-\theta_k)^2}$ computed for
+$t\geq20$\,s, the pitch error goes from $0.43^\circ$ (inclinometer) to
+$0.06^\circ$ (filter); during the manoeuvre there is no visible lag.
 
 \paragraph{Experiments}
 The filter was run on the data of Experiments A to E and compared with
@@ -460,8 +475,8 @@ the onboard estimate (pitch in Fig.~\ref{fig:exp-pitch}, roll in
 Fig.~\ref{fig:exp-roll}); the results are discussed in Question 4.6.
 
 \begin{center}
-\includegraphics[width=0.8\linewidth]{figs/4_1_sim.pdf}
-\captionof{figure}{Simulation, pitch: inclinometer, filter of Q4.1, filter of Q4.4 and true angle (top) and estimation error (bottom), with a gyro bias of $0.05$\,rad/s.}
+\includegraphics[width=0.7\linewidth]{figs/4_1_sim.pdf}
+\captionof{figure}{Simulation without gyro bias, pitch: inclinometer, filter of Q4.1 and true angle (top) and estimation error (bottom).}
 \label{fig:sim}
 \end{center}
 \end{answer}
@@ -561,11 +576,8 @@ does not follow the onboard angle. With $10^2 Q$ ($L\approx
 $10^4 Q$ the filter is almost a pure integration of the gyro and the
 errors accumulated take $1/L\approx 28$\,s to be corrected.
 
-In the filter of Q4.4 there is a third parameter, the variance $R_b$ of
-the bias process noise, which sets how fast the bias estimate converges.
-
 \begin{center}
-\includegraphics[width=0.9\linewidth]{figs/4_3_tuning.pdf}
+\includegraphics[width=0.85\linewidth]{figs/4_3_tuning.pdf}
 \captionof{figure}{Filter of Q4.1 for three values of $Q$: pitch in Experiment D and roll in Experiment E.}
 \label{fig:tuning}
 \end{center}
@@ -607,33 +619,46 @@ so the bias is observable. The filter is
   &\dot{\hat b}_y = L_2(\theta_m - \hat\theta)
 \end{aligned}
 \]
-and the Riccati equation with process noise $\mathrm{diag}(R,\,R_b)$ and
-measurement noise $Q$ gives
+with $L = PC^TQ^{-1} = [p_{11} \quad p_{12}]^T/Q$. With
+$P = \begin{bmatrix} p_{11} & p_{12}\\ p_{12} & p_{22}\end{bmatrix}$,
+process noise $\mathrm{diag}(R,\,R_b)$ and measurement noise $Q$, the
+three entries of $0 = AP + PA^T + \mathrm{diag}(R,R_b) - PC^TQ^{-1}CP$
+are
 \[
-  L_2 = -\sqrt{R_b/Q}, \qquad
-  L_1 = \sqrt{R/Q + 2\sqrt{R_b/Q}} .
+  (1,1):\ -2p_{12} + R - \frac{p_{11}^2}{Q} = 0, \qquad
+  (1,2):\ -p_{22} - \frac{p_{11}p_{12}}{Q} = 0, \qquad
+  (2,2):\ R_b - \frac{p_{12}^2}{Q} = 0 .
+\]
+From $(2,2)$, $p_{12} = -\sqrt{R_bQ}$ (the negative root gives a stable
+filter), and then from $(1,1)$, $p_{11} = \sqrt{Q(R + 2\sqrt{R_bQ})}$, so
+\[
+  L_2 = \frac{p_{12}}{Q} = -\sqrt{R_b/Q}, \qquad
+  L_1 = \frac{p_{11}}{Q} = \sqrt{R/Q + 2\sqrt{R_b/Q}} .
 \]
 The implementation is the same block of Q4.1 with the state
 $[\phi \quad \theta \quad b_x \quad b_y]^T$.
 
 \paragraph{Simulation}
-A constant bias $b_y = 0.05$\,rad/s ($2.86$\,deg/s) was added to the
-simulated gyro. Fig.~\ref{fig:sim-bias} shows $\hat b_y$ for three
+In \texttt{ARDroneHoverSim\_4\_4} a constant bias $b_y = 0.05$\,rad/s
+($2.86$\,deg/s) is added to the simulated gyro, with the same manoeuvre
+and noise of Q4.1. Fig.~\ref{fig:sim-bias} (bottom) shows $\hat b_y$ for three
 values of $R_b$. The poles are the roots of $s^2+L_1s-L_2$; the slow
 one is approximately $L_2/L_1 \approx -\sqrt{R_b/R}$, so the bias
 converges with a time constant of about $32$, $10$ and $3$\,s for
-$R_b = 10^{-3}R$, $10^{-2}R$ and $10^{-1}R$. We chose $R_b=10^{-2}R$,
+$R_b = 10^{-3}R$, $10^{-2}R$ and $10^{-1}R$. We chose $R_b=10^{-2}R$; for
+pitch $\sqrt{R_b/Q} = \sqrt{0.131} = 0.362$ and
+$L_1 = \sqrt{13.1 + 0.72} = 3.72$, and for both axes
 \[
   L = \begin{bmatrix} 4.06 & 0\\ 0 & 3.72\\ -0.396 & 0\\ 0 & -0.362 \end{bmatrix}.
 \]
-In Fig.~\ref{fig:sim} the filter of Q4.1 keeps a constant error of
+With the bias, the filter of Q4.1 keeps a constant error of
 $0.79^\circ$ $(= b_y/L_\theta)$, while the error of the augmented
 filter goes to zero as the bias converges (RMS of $0.07^\circ$ for
-$t\geq 20$\,s).
+$t\geq 20$\,s), Fig.~\ref{fig:sim-bias} (top).
 
 \begin{center}
-\includegraphics[width=0.8\linewidth]{figs/4_4_sim_bias.pdf}
-\captionof{figure}{Simulation: gyro bias $b_y$ and its estimate $\hat b_y$ for three values of $R_b$.}
+\includegraphics[width=0.7\linewidth]{figs/4_4_sim.pdf}
+\captionof{figure}{Simulation with gyro bias $b_y = 0.05$\,rad/s: pitch error of the filters of Q4.1 and Q4.4 with $R_b=10^{-2}R$ (top); bias $b_y$ and its estimate $\hat b_y$ for three values of $R_b$ (bottom).}
 \label{fig:sim-bias}
 \end{center}
 
@@ -657,7 +682,9 @@ For the filter of Q4.1, from Eq.~\eqref{eq:q42_tf},
 \[
   G_L(s) + G_H(s) = \frac{L_\theta}{s+L_\theta} + \frac{s}{s+L_\theta} = 1 .
 \]
-For the filter of Q4.4, eliminating $\hat b_y$,
+For the filter of Q4.4, the second equation gives
+$\hat b_y = \tfrac{L_2}{s}(\theta_m - \hat\theta)$; replacing it in the
+first one, $(s^2 + L_1 s - L_2)\,\hat\theta = s\,\omega_{y_m} + (L_1 s - L_2)\,\theta_m$, so
 \[
   \hat\theta(s) = \underbrace{\frac{L_1 s - L_2}{s^2+L_1 s-L_2}}_{G_L(s)}\,\theta_m(s)
   + \frac{1}{s}\,\underbrace{\frac{s^2}{s^2+L_1 s-L_2}}_{G_H(s)}\,\omega_{y_m}(s),
@@ -693,21 +720,33 @@ Discuss the results obtained and relate them to the different conditions of oper
 
 \begin{answer}
 Figs.~\ref{fig:exp-pitch} and~\ref{fig:exp-roll} show the two filters,
-the raw inclinometer and the onboard estimate, which is used as
-reference.
+the raw inclinometer and the onboard estimate. The onboard estimate is
+the output of the drone's own filter, which uses the same sensors, so it
+is not the true attitude (only known in simulation) and the differences
+below are not errors of our filters. It is used for comparison because,
+during the manoeuvres, its time derivative agrees with the rate gyro
+(correlation coefficient of $0.94$ in D and $0.98$ in E).
 
 \begin{center}
-\includegraphics[width=0.85\linewidth]{figs/4_6_pitch.pdf}
+\includegraphics[width=0.78\linewidth]{figs/4_6_pitch.pdf}
 \captionof{figure}{Pitch in Experiments A to E.}
 \label{fig:exp-pitch}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.78\linewidth]{figs/4_6_roll.pdf}
+\captionof{figure}{Roll in Experiments A to E.}
+\label{fig:exp-roll}
 \end{center}
 
 \begin{itemize}
   \item \textbf{A (at rest):} the estimate is the inclinometer without
   the noise (standard deviation from $0.19^\circ$ to $0.07^\circ$ in
   pitch). There is a constant difference to the onboard estimate
-  ($0.9^\circ$ in pitch, $2.0^\circ$ in roll), which comes from the
-  offset of the raw inclinometer seen in Q3.4.
+  ($0.9^\circ$ in pitch, $2.0^\circ$ in roll), which is the offset of
+  the raw inclinometer seen in Q3.4. Our filters use the inclinometer as
+  the only absolute measurement and keep it; the onboard filter probably
+  removes it with its own calibration.
   \item \textbf{B (rotors on, on the ground):} the vibration increases
   the inclinometer noise and also moves its mean (roll of $-3.5^\circ$
   with the drone on the ground). The filter removes the high-frequency
@@ -726,13 +765,14 @@ reference.
   only for $1/L_\theta\approx 0.3$\,s and then goes to the
   inclinometer: its mean in the first second is $1.8^\circ$.
   \item \textbf{E (waypoints in $y$):} the same happens in roll, where
-  the peaks of $9.8^\circ$ and $-6.4^\circ$ of the onboard estimate are
-  estimated as $5.3^\circ$ and $-3.3^\circ$.
+  the onboard estimate has peaks of $9.8^\circ$ and $-6.4^\circ$, and
+  the filter only $5.3^\circ$ and $-3.3^\circ$.
 \end{itemize}
 
 The $Q$ and $R$ measured in hover describe the noise of the sensors but
 not the error of the inclinometer during manoeuvres. For D and E a
-lower gain is better, as shown in Fig.~\ref{fig:tuning}.
+lower gain, which relies more on the gyro, gives an estimate closer to
+the onboard one (Fig.~\ref{fig:tuning}).
 
 The filter with bias gives almost the same angles in all experiments.
 Its bias estimate stays within $\pm0.2$\,deg/s in A and C, but reaches
@@ -758,19 +798,11 @@ both angles, using the following correspondence:
   \theta_m \to \phi_m, \qquad
   b_y \to b_x .
 \]
-The roll gains are $L_\phi = 3.96$\,rad/s (Q4.1) and
-$L_1 = 4.06$\,rad/s, $L_2 = -0.396$\,s$^{-2}$ (Q4.4), computed from the
-roll $R$ and $Q$ of Q4.1. The transfer functions of Q4.2 and Q4.5 are the
-same with these gains, and the conclusions on the effect of $Q$ and $R$
-(Q4.3) hold unchanged for roll. The results on Experiments A to E are in
-Fig.~\ref{fig:exp-roll} and are discussed together with the pitch in
-Q4.6.
-
-\begin{center}
-\includegraphics[width=0.85\linewidth]{figs/4_7_roll.pdf}
-\captionof{figure}{Roll in Experiments A to E.}
-\label{fig:exp-roll}
-\end{center}
+The steady-state gains $L$ for roll (Q4.1), the bias-augmented
+filter (Q4.4) and the evaluation on Experiments A to E (Q4.6) are
+reported together with the pitch results, in the same tables and figures.
+The conclusions on the complementarity of the filters (Q4.5) and on the
+effect of $Q$ and $R$ (Q4.3) hold unchanged for roll.
 \end{answer}
 
 % =====================================================================
@@ -782,12 +814,6 @@ Study and implement the solution proposed in P.~Batista, C.~Silvestre, and P.~Ol
 \end{question}
 
 \begin{answer}
-We did not have access to the full text of the journal paper. The system
-below is the single vector observation system, also numbered (2), of the
-conference paper of the same authors ``Sensor-based Complementary
-Globally Asymptotically Stable Filters for Attitude Estimation'', which
-is openly available.
-
 \paragraph{Nominal system}
 Let $R$ be the rotation matrix from $\fB$ to $\fI$, with
 $\dot R = R\,S(\omega)$, where $S(\cdot)$ is the skew-symmetric matrix
@@ -809,8 +835,10 @@ $x=y$ is measured, it can be written as
   y = \underbrace{\begin{bmatrix} I_3 & 0 \end{bmatrix}}_{C}
   \begin{bmatrix} x\\ b\end{bmatrix},
 \]
-a linear time-varying system, since $\omega_m(t)$ and $y(t)$ are known
-signals. There is no linearization and no small-angle approximation.
+which is system (2) of the reference, with $x_1 = x$ and $x_2 = b$. It
+is treated as linear time-varying, since $\omega_m(t)$ and $y(t)$ are
+known signals. There is no linearization and no small-angle
+approximation.
 Roll and pitch follow from
 $x = [-\sin\theta \quad \sin\phi\cos\theta \quad \cos\phi\cos\theta]^T$,
 \[
@@ -836,7 +864,8 @@ $Q$ (accelerometer), the filter is
 with $\hat{\mathbf{x}} = [\hat x^T \quad \hat b^T]^T$. It is the
 Riccati equation of Q4.1 without $\dot P = 0$: $A$ and $G$ change with
 the measurements, so the gain is not constant and $P$ is integrated
-together with the state.
+together with the state. In the notation of the reference (Section 4),
+$\Xi(t) = G(t)RG^T(t)$, $\Theta = Q$ and the gain is $K(t)$.
 
 \paragraph{Observability}
 $x$ is measured, so the question is the bias. It acts on $x$ through
@@ -847,11 +876,11 @@ $y$. For constant $\omega_m$ and $y$,
   = \mathrm{rank}\begin{bmatrix} I_3 & 0\\ -S(\omega_m) & -S(y) \end{bmatrix}
   = 3 + \mathrm{rank}\,S(y) = 5 ,
 \]
-and the higher powers of $A$ add nothing. In the reference, the system is
-uniformly completely observable if and only if the direction of $y$ in
-$\fB$ keeps changing: there are $\delta,\alpha>0$ such that, for every
-$t$ and every unit vector $d$, $\|S(y(t^*))\,d\|\geq\alpha$ for some
-$t^*\in[t,\,t+\delta]$. In hover $y\approx e_3$, so $b_x$ and $b_y$ are
+and the higher powers of $A$ add nothing. In the reference, the system
+is observable on $[t_0,t_f]$ if and only if $y$ is not constant in that
+interval (Theorem 3.3), and uniformly completely observable, which makes
+the Kalman filter error globally asymptotically stable, if the direction
+of $y$ in $\fB$ keeps changing (Theorem 3.4). In hover $y\approx e_3$, so $b_x$ and $b_y$ are
 observable and $b_z$ is not; a rotation in yaw does not change $y$ and
 does not help. $b_z$ is only corrected while the vehicle is tilted.
 
@@ -867,7 +896,9 @@ $R_\omega$ and $Q$ are the variances measured in hover (Q3.3),
 \]
 with $R_b = 10^{-4}R_\omega$,
 $\hat{\mathbf{x}}_0 = [0 \quad 0 \quad 1 \quad 0 \quad 0 \quad 0]^T$
-(level, no bias) and $P_0 = \mathrm{diag}(10^{-3}I_3,\ 0.05^2 I_3)$.
+(level, no bias; the reference uses the first measurement, but the
+first samples of the logs are zero) and
+$P_0 = \mathrm{diag}(10^{-3}I_3,\ 0.05^2 I_3)$.
 Here $P_0$ already gives a gain to the bias, so $R_b$ can be much
 smaller than in Q4.4, where the steady-state bias gain was zero for
 $R_b=0$.
@@ -899,7 +930,10 @@ inclinometer.
 Fig.~\ref{fig:exp5} compares the filter with the inclinometer, the
 onboard estimate and the filter of Q4.4, with the measured $Q$ and with
 $100\,Q$ (as in Q4.3). Table~\ref{tab:rms5} gives the RMS difference to
-the onboard estimate in the \texttt{winStats} windows of Section 3.
+the onboard estimate, $\sqrt{\tfrac{1}{N}\sum_k(\hat\theta_k-\theta_{\mathrm{ob},k})^2}$,
+in the intervals $10$--$24$, $10$--$33$, $9$--$30$, $6$--$18$ and
+$8$--$32$\,s for A to E (those of Section 3 for A to C, and the flight
+for D and E).
 
 \begin{center}
 \begin{minipage}{\linewidth}\centering

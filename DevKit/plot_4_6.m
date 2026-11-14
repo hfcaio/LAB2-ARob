@@ -1,5 +1,5 @@
 %% Plot 4.6 / 4.7 — resumo dos experimentos A-E: KF 4.1 e KF 4.4 vs inclinómetro e onboard
-%  Gera 4_6_pitch.pdf e 4_7_roll.pdf (um painel por experimento) e imprime o RMS
+%  Gera 4_6_pitch.pdf e 4_6_roll.pdf (um painel por experimento) e imprime o RMS
 %  da diferença para o onboard na janela winStats.
 
 exps    = {'A','B','C','D','E'};
@@ -31,7 +31,7 @@ end
 
 %% figuras resumo
 cfg = {'4_6_pitch', 'theta_m', 2, 'theta_ob', '\theta';
-       '4_7_roll',  'phi_m',   1, 'phi_ob',   '\phi'};
+       '4_6_roll',  'phi_m',   1, 'phi_ob',   '\phi'};
 for c = 1:size(cfg,1)
     fig = figure('Name', cfg{c,1}, 'Position', [100 100 900 800]);
     for k = 1:numel(exps)
