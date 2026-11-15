@@ -34,7 +34,7 @@
 % name / number / (one line per author)
 \newcommand{\AuthorList}{%
   \AuthorRow{IST1116311}{Caio Hokama Freitas}%
-  \AuthorRow{IST1113325}{Majid Attarzadeh}%   TODO: real IST number
+  \AuthorRow{IST1113325}{Majid Atarzadeh}%   TODO: real IST number
 }
 
 % ------------------------------------------------------------ colours ---
@@ -273,14 +273,15 @@ ground. These covariances describe the vibration, not the sensor noise.
 \end{question}
 
 \begin{answer}
-Same computation, in the interval $9$--$30$\,s, with the drone in hover
-(take-off and landing excluded, $N=4201$). The whole flight is compared
-at the end.
+Same computations were performed over the interval \(9\)--\(30\,\mathrm{s}\), corresponding to steady hover. The take-off and landing phases were excluded, resulting in \(N=4201\) samples.
 
 \paragraph{Accelerometer}
+
 \[
 \boldsymbol{\mu}_{a,C} =
-\begin{bmatrix} 8.0\\ -42.7\\ -1008.6 \end{bmatrix}\mathrm{mg},
+\begin{bmatrix}
+8.0\\ -42.7\\ -1008.6
+\end{bmatrix}\mathrm{mg},
 \qquad
 \boldsymbol{\Sigma}_{a,C} =
 \begin{bmatrix}
@@ -288,15 +289,21 @@ at the end.
 28.3 & 43.1 & 19.5\\
 20.8 & 19.5 & 56.8
 \end{bmatrix}\mathrm{mg}^2,
-\qquad
+\]
+\[
 \boldsymbol{\sigma}_{a,C} =
-\begin{bmatrix} 7.69\\ 6.57\\ 7.53 \end{bmatrix}\mathrm{mg}.
+\begin{bmatrix}
+7.69\\ 6.57\\ 7.53
+\end{bmatrix}\mathrm{mg}.
 \]
 
 \paragraph{Rate gyro}
+
 \[
 \boldsymbol{\mu}_{g,C} =
-\begin{bmatrix} -0.065\\ 0.040\\ -0.020 \end{bmatrix}\mathrm{deg/s},
+\begin{bmatrix}
+-0.065\\ 0.040\\ -0.020
+\end{bmatrix}\mathrm{deg/s},
 \qquad
 \boldsymbol{\Sigma}_{g,C} =
 \begin{bmatrix}
@@ -304,41 +311,20 @@ at the end.
 -0.38 & 2.51 & 0.23\\
 -0.43 & 0.23 & 2.55
 \end{bmatrix}(\mathrm{deg/s})^2,
-\qquad
+\]
+\[
 \boldsymbol{\sigma}_{g,C} =
-\begin{bmatrix} 1.45\\ 1.58\\ 1.60 \end{bmatrix}\mathrm{deg/s}.
+\begin{bmatrix}
+1.45\\ 1.58\\ 1.60
+\end{bmatrix}\mathrm{deg/s}.
 \]
 
-Compared with A, $\boldsymbol{\sigma}_a$ is 2 to 7 times larger and
-$\boldsymbol{\sigma}_g$ 35 to 40 times larger, but both are lower than in
-B, probably because the vehicle is no longer pressed against the ground.
-In hover there are new sources: the vehicle really rotates and moves,
-since the onboard controller keeps correcting the attitude and the
-position, and there are air currents. The gyro measures these rotations,
-and the accelerometer measures the specific force, which includes the
-linear acceleration. Part of $\boldsymbol{\Sigma}$ is therefore real
-motion and not sensor noise. These values are used for $Q$ and $R$ in
-Section 4, as they describe the conditions in which the filters work.
+Compared with Experiment A, the standard deviations increase by approximately \(2\)--\(7\) times for the accelerometer and \(35\)--\(40\) times for the rate gyro. This increase reflects the disturbances present during flight. Compared with Experiment B, however, the measured standard deviations are considerably lower. In particular, the gyro standard deviations decrease from \(3.24\)--\(5.90\,\mathrm{deg/s}\) in Experiment B to \(1.45\)--\(1.60\,\mathrm{deg/s}\) in hover. This is consistent with the reduction of the strong mechanical vibrations observed when the vehicle was held against the ground with its rotors spinning.
 
-\paragraph{Whole flight}
-Including the take-off and the landing ($0$--$33$\,s, $N=6601$):
-\begin{center}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Experiment C & $\boldsymbol{\sigma}_a$ [mg] & $\boldsymbol{\sigma}_g$ [deg/s] & std $\phi_m$, $\theta_m$ [deg] \\
-\midrule
-hover ($9$--$30$\,s)        & $(7.7,\ 6.6,\ 7.5)$   & $(1.45,\ 1.58,\ 1.60)$ & $0.37,\ 0.44$ \\
-whole flight ($0$--$33$\,s) & $(27.5,\ 12.1,\ 92.8)$ & $(3.64,\ 4.40,\ 2.20)$ & $3.90,\ 1.66$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-The take-off gives large vertical accelerations ($\sigma_{a_z}=68$\,mg
-up to $32.5$\,s), and the touchdown at $32.7$\,s is a single spike of
-the specific force ($\phi_m$ reaches $-144^\circ$) that alone takes the
-standard deviation of $\phi_m$ from $0.47^\circ$ to $3.90^\circ$. These
-short events are not sensor noise, so they were left out of $Q$ and $R$.
+During hover, the measurements are affected not only by sensor noise and rotor-induced vibrations, but also by the actual motion of the vehicle. The flight controller continuously corrects small deviations in attitude and position, causing angular rotations and linear accelerations. Consequently, the gyroscope measures both the angular motion and its measurement disturbances, while the accelerometer measures specific force, which includes the effects of linear acceleration in addition to gravity. Air currents and other external disturbances can also contribute to these movements.
+
+Therefore, the covariance matrices obtained in this experiment do not represent purely intrinsic sensor noise: they also include the effects of the vehicle's motion and its operating environment. This distinction is important when interpreting the results. Nevertheless, these measurements provide a representative characterization of the signals during flight and are therefore used to tune the filters in Section 4, where the estimators are expected to operate under similar conditions.
 \end{answer}
-
 % ------------------------------------------------------------ Q3.4 ---
 \begin{question}{3.4}{L}
    To later evaluate filtering effects, compute the pitch and roll inclinometer data from the accelerometer measurements, and identify these estimates as raw pitch and roll measurements. Comment the results.
@@ -997,3 +983,4 @@ $\hat b_y$ reach $0.8$\,deg/s, as in Q4.4.
 \end{answer}
 
 \end{document}
+
